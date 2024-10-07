@@ -21,7 +21,7 @@ maintainers = [
     { name = "Jon Agirre", email = "jon.agirre@york.ac.uk" },
 ]
 dependencies = [
-    "gemmi == 0.6.6"
+    "gemmi>=0.6.6"
 ]
 
 [tool.setuptools]
