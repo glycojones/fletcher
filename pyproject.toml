@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fletcher_maximus"
+dynamic=["version"]
+description = "A package for quickly spotting molecular geometric features in protein structural files."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",
+]
+authors = [
+    { name = "Jon Agirre", email = "jon.agirre@york.ac.uk" },
+    { name = "Federico Sabbadin", email = "federico.sabbadin@york.ac.uk" }
+]
+maintainers = [
+    { name = "Jon Agirre", email = "jon.agirre@york.ac.uk" },
+]
+dependencies = [
+    "gemmi == 0.6.6"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools_scm]
+version_file = "src/fletcher/_version.py"
+
+[project.urls]
+Homepage = "https://github.com/glycojones/fletcher"
+Issues = "https://github.com/glycojones/fletcher/issues"
+
+[tool.pytest.ini_options]
+markers = [
+]
