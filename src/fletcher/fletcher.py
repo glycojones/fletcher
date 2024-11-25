@@ -2,7 +2,6 @@ import gemmi
 import argparse
 import json
 from pathlib import Path
-from coot_scripting import create_script_file
 
 def find_structural_motifs ( filename = "",
                              residue_lists = [ ],
