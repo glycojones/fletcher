@@ -2,6 +2,35 @@ import gemmi
 import argparse
 import json
 from pathlib import Path
+from math import exp
+
+def plddt_to_rmsd ( plddt = 0.0 ) :
+  frac_lddt = plddt / 100.0
+  rmsd_estimation = 1.5 * exp(4.0*(0.7-frac_lddt))
+  return rmsd_estimation
+
+
+def plddt_to_bfact ( plddt = 0.0 ) :
+  return min ( 999.99, 26.318945069571623 * (plddt_to_rmsd ( plddt ))**2)
+
+
+def create_script_file ( filename = "", list_of_hits = [ ] ) :
+  with open ( filename.split('.')[0] + '.py', 'w' ) as file_out :
+    file_out.write ( "# File programmatically created by Fletcher\n" )
+    file_out.write ( 'handle_read_draw_molecule_with_recentre ("%s", 1)\n' % filename )
+    file_out.write ( 'interesting_things_gui ("Results from Fletcher",[\n')
+    for hit in list_of_hits :
+      file_out.write ( '["%s %s", %.3f, %.3f, %.3f, ]' \
+                                % ( hit[0].get('name'), \
+                                    hit[0].get('seqid'), \
+                                    hit[0].get('coordinates')[0], \
+                                    hit[0].get('coordinates')[1], \
+                                    hit[0].get('coordinates')[2] ))
+      if hit is not list_of_hits[-1] :
+        file_out.write(',\n')
+    file_out.write ( '])\n')
+    file_out.close ( )
+
 
 def find_structural_motifs ( filename = "",
                              residue_lists = [ ],
