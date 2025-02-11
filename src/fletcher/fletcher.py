@@ -228,6 +228,19 @@ def find_structural_motifs ( filename = "",
         else :
           residue_dict['plddt'] = '%.2f' % residue[-1].b_iso
         residue_dict ['coordinates'] = residue[-1].pos.tolist()
+
+ # LDDT calculation
+                ref_residue = find_matching_residue(ref_model, residue)
+                if ref_residue:
+                    lddt_score = calculate_lddt(filename, reference, str(residue.chain.id), residue.seqid.num)
+                    if lddt_score is not None:
+                        residue_dict['lddt'] = "%.2f" % lddt_score
+                    else:
+                        residue_dict['lddt'] = "N/A"  # Handles cases where it can't calculate LDDT
+                else:
+                    residue_dict['lddt'] = "N/A"  # Handles cases where it can't calculate LDDT
+
+          
         hit.append ( residue_dict )
       hit_list.append ( hit )
       print ( "Hit found:", hit )
