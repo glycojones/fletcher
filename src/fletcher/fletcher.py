@@ -8,6 +8,7 @@ import itertools
 import numpy as np
 from pathlib import Path
 from math import exp
+from Bio.PDB import PDBParser
 
 DATA_DIR_PATH = os.path.join(os.path.dirname(__file__), 'data')
 LIBRARY_PATH = os.path.join(DATA_DIR_PATH, 'library.gz')
