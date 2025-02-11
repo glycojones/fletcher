@@ -233,10 +233,10 @@ def find_structural_motifs ( filename = "",
       ref_residue = find_matching_residue(ref_model, residue)
       if ref_residue:
         lddt_score = calculate_lddt(filename, reference, str(residue.chain.id), residue.seqid.num)
-      if lddt_score is not None:
-        residue_dict['lddt'] = "%.2f" % lddt_score
-      else:
-        residue_dict['lddt'] = "N/A"  # Handles cases where it can't calculate LDDT
+          if lddt_score is not None:
+            residue_dict['lddt'] = "%.2f" % lddt_score
+          else:
+            residue_dict['lddt'] = "N/A"  # Handles cases where it can't calculate LDDT
       else:
         residue_dict['lddt'] = "N/A"  # Handles cases where it can't calculate LDDT
    
