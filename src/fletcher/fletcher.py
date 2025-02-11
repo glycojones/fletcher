@@ -180,6 +180,15 @@ def find_structural_motifs ( filename = "",
     print ("\nNo results found :-( \n")
   return result_dict
 
+def find_matching_residue(ref_model, residue):
+    """Finds the corresponding residue in the reference model based on sequence ID."""
+    for ref_chain in ref_model[0]:  # Assuming only one model in reference
+        for ref_residue in ref_chain:
+            if ref_residue.seqid == residue.seqid:  # Compare seqid
+                return ref_residue
+    return None  # Return None if no match is found
+
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser ( 
                     prog='Fletcher',
