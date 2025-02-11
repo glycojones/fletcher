@@ -104,7 +104,8 @@ def find_structural_motifs ( filename = "",
                              c_term = False,
                              reference = "",
                             ) :
-  
+                                
+  ref_model = gemmi.read_structure(reference)  # Load the reference structure
   af_model = gemmi.read_structure ( filename )
   neighbour_search = gemmi.NeighborSearch ( af_model[0], af_model.cell, distance ).populate ( include_h=False )
   first_residues = gemmi.Selection ( '(' + residue_lists[0][0] + ')' ) 
