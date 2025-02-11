@@ -79,6 +79,56 @@ def plddt_to_bfact ( plddt = 0.0 ) :
   return min ( 999.99, 26.318945069571623 * (plddt_to_rmsd ( plddt ))**2)
 
 
+def calculate_lddt(af_model_path, ref_model_path, residue1_chain_id, residue1_seqid):
+    """Calculates LDDT using Bio.PDB (Corrected - No Superimposition)."""
+    parser = PDBParser()
+    af_structure = parser.get_structure("AF", af_model_path)
+    ref_structure = parser.get_structure("REF", ref_model_path)
+
+    af_model = af_structure[0]
+    ref_model = ref_structure[0]
+
+    try:
+        af_chain = af_model[residue1_chain_id]
+        ref_chain = ref_model[residue1_chain_id]
+        af_residue = af_chain[residue1_seqid]
+        ref_residue = ref_chain[residue1_seqid]
+    except KeyError:
+        return None  # Residue not found in one of the structures
+
+    # Get list of CA atoms from residues surrounding the central residue
+    af_ca_atoms = []
+    ref_ca_atoms = []
+
+    # Get list of CA from surrounding residues
+    for i in range(-5, 6): #Check 5 residues before and after the central one
+        try:
+            af_res = af_chain[af_residue.get_id()[1] + i]
+            ref_res = ref_chain[ref_residue.get_id()[1] + i]
+            if af_res.get_resname() in gemmi.aminoacid_names and ref_res.get_resname() in gemmi.aminoacid_names:
+                af_ca_atoms.append(af_res["CA"].get_vector())
+                ref_ca_atoms.append(ref_res["CA"].get_vector())
+        except KeyError:
+            pass #If residue doesn't exist, skip
+
+
+    if len(af_ca_atoms) > 0 and len(ref_ca_atoms) > 0:
+        lddt_scores = []
+
+        for i in range(len(af_ca_atoms)):
+            for j in range(i + 1, len(af_ca_atoms)):
+                af_dist = af_ca_atoms[i] - af_ca_atoms[j]
+                ref_dist = ref_ca_atoms[i] - ref_ca_atoms[j]
+                distance_diff = abs(af_dist.norm() - ref_dist.norm())
+                lddt_scores.append(1 / (1 + (distance_diff / 0.5) ** 2))
+        if len(lddt_scores) > 0:
+            lddt = sum(lddt_scores) / len(lddt_scores) * 100
+        else:
+            lddt = None
+        return lddt
+    else:
+        return None  # No CA atoms found, return None
+
 def create_script_file ( filename = "", list_of_hits = [ ] ) :
   with open ( filename.split('.')[0] + '.py', 'w' ) as file_out :
     file_out.write ( "# File programmatically created by Fletcher\n" )
