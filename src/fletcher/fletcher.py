@@ -79,6 +79,25 @@ def plddt_to_bfact ( plddt = 0.0 ) :
   return min ( 999.99, 26.318945069571623 * (plddt_to_rmsd ( plddt ))**2)
 
 
+
+
+def create_script_file ( filename = "", list_of_hits = [ ] ) :
+  with open ( filename.split('.')[0] + '.py', 'w' ) as file_out :
+    file_out.write ( "# File programmatically created by Fletcher\n" )
+    file_out.write ( 'handle_read_draw_molecule_with_recentre ("%s", 1)\n' % filename )
+    file_out.write ( 'interesting_things_gui ("Results from Fletcher",[\n')
+    for hit in list_of_hits :
+      file_out.write ( '["%s %s", %.3f, %.3f, %.3f, ]' \
+                                % ( hit[0].get('name'), \
+                                    hit[0].get('seqid'), \
+                                    hit[0].get('coordinates')[0], \
+                                    hit[0].get('coordinates')[1], \
+                                    hit[0].get('coordinates')[2] ))
+      if hit is not list_of_hits[-1] :
+        file_out.write(',\n')
+    file_out.write ( '])\n')
+    file_out.close ( )
+
 def calculate_lddt(af_model_path, ref_model_path, residue1_chain_id, residue1_seqid):
     """Calculates LDDT using Bio.PDB (Corrected - No Superimposition)."""
     parser = PDBParser()
@@ -128,25 +147,6 @@ def calculate_lddt(af_model_path, ref_model_path, residue1_chain_id, residue1_se
         return lddt
     else:
         return None  # No CA atoms found, return None
-
-def create_script_file ( filename = "", list_of_hits = [ ] ) :
-  with open ( filename.split('.')[0] + '.py', 'w' ) as file_out :
-    file_out.write ( "# File programmatically created by Fletcher\n" )
-    file_out.write ( 'handle_read_draw_molecule_with_recentre ("%s", 1)\n' % filename )
-    file_out.write ( 'interesting_things_gui ("Results from Fletcher",[\n')
-    for hit in list_of_hits :
-      file_out.write ( '["%s %s", %.3f, %.3f, %.3f, ]' \
-                                % ( hit[0].get('name'), \
-                                    hit[0].get('seqid'), \
-                                    hit[0].get('coordinates')[0], \
-                                    hit[0].get('coordinates')[1], \
-                                    hit[0].get('coordinates')[2] ))
-      if hit is not list_of_hits[-1] :
-        file_out.write(',\n')
-    file_out.write ( '])\n')
-    file_out.close ( )
-
-
 def find_structural_motifs ( filename = "",
                              residue_lists = [ ],
                              distance = 0.0,
