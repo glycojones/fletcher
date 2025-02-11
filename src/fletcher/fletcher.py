@@ -211,7 +211,11 @@ if __name__ == '__main__':
                         help = 'Require one residue to be at the c-terminus', \
                         choices = [ 'yes', 'no' ], \
                         default = 'no' )
-
+    
+  paser.add_argument ( '-ref', '--reference', \
+                       help = "Reference Model for LDDT comparison.", \
+                       required = True )
+    
   args = parser.parse_args ( )
   
   # Assuming argparse has got the right number of parameters beyond this point
