@@ -102,6 +102,7 @@ def find_structural_motifs ( filename = "",
                              min_plddt = 70.0,
                              n_term = False,
                              c_term = False,
+                             reference = "",
                             ) :
   
   af_model = gemmi.read_structure ( filename )
