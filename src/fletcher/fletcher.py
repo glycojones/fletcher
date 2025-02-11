@@ -243,6 +243,7 @@ if __name__ == '__main__':
           min_plddt,
           "\nN-term: ", n_term,
           "\nC-term: ", c_term,
+          "\nReference Model: ", args.reference,
           "\n" )
   
   if len ( list_of_residues ) > 1 and distance > 0.0 :
