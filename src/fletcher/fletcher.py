@@ -258,5 +258,5 @@ if __name__ == '__main__':
           "\n" )
   
   if len ( list_of_residues ) > 1 and distance > 0.0 :
-    find_structural_motifs ( args.filename, list_of_residues, distance, min_plddt, n_term, c_term )
+    find_structural_motifs ( args.filename, list_of_residues, distance, min_plddt, n_term, c_term, args.reference )
 
