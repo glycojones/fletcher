@@ -215,13 +215,13 @@ def find_structural_motifs ( filename = "",
 
       # LDDT calculation
       ref_residue = find_matching_residue(ref_model[0], residue)
-        if ref_residue:
+      if ref_residue:
           lddt_score = calculate_lddt_openstructure(filename, reference, residue)
           if lddt_score is not None:
               residue_dict['lddt'] = "%.2f" % lddt_score
           else:
               residue_dict['lddt'] = "N/A"
-        else:
+      else:
           residue_dict['lddt'] = "N/A"
 
    
