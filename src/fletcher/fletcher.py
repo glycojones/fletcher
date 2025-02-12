@@ -6,8 +6,10 @@ import json
 import pickle
 import itertools
 import numpy as np
+import openstructure as op
 from pathlib import Path
 from math import exp
+
 
 DATA_DIR_PATH = os.path.join(os.path.dirname(__file__), 'data')
 LIBRARY_PATH = os.path.join(DATA_DIR_PATH, 'library.gz')
@@ -243,4 +245,3 @@ if __name__ == '__main__':
   
   if len ( list_of_residues ) > 1 and distance > 0.0 :
     find_structural_motifs ( args.filename, list_of_residues, distance, min_plddt, n_term, c_term )
-
