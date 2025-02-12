@@ -8,7 +8,7 @@ import itertools
 import numpy as np
 from pathlib import Path
 from math import exp
-from Bio.PDB import PDBParser
+import openstructure as op
 
 DATA_DIR_PATH = os.path.join(os.path.dirname(__file__), 'data')
 LIBRARY_PATH = os.path.join(DATA_DIR_PATH, 'library.gz')
@@ -98,55 +98,38 @@ def create_script_file ( filename = "", list_of_hits = [ ] ) :
     file_out.write ( '])\n')
     file_out.close ( )
 
-def calculate_lddt(af_model_path, ref_model_path, residue):
-    """Calculates LDDT using Bio.PDB (Corrected - No Superimposition)."""
-    parser = PDBParser()
-    af_structure = parser.get_structure("AF", af_model_path)
-    ref_structure = parser.get_structure("REF", ref_model_path)
-
-    af_model = af_structure[0]
-    ref_model = ref_structure[0]
-
+def calculate_lddt_openstructure(af_model_path, ref_model_path, residue):
+    """Calculates LDDT using OpenStructure."""
     try:
-        af_chain = af_model[residue1_chain_id]
-        ref_chain = ref_model[residue1_chain_id]
-        af_residue = af_chain[residue1_seqid]
-        ref_residue = ref_chain[residue1_seqid]
-    except KeyError:
-        return None  # Residue not found in one of the structures
+        af_structure = op.read_pdb(af_model_path)
+        ref_structure = op.read_pdb(ref_model_path)
 
-    # Get list of CA atoms from residues surrounding the central residue
-    af_ca_atoms = []
-    ref_ca_atoms = []
+        # Find corresponding residues (important to handle chain and residue number/name correctly)
+        af_chain_id = residue.get_parent().id
+        af_res_seqid = residue.get_id()[1]
+        af_res_name = residue.get_resname()
 
-    # Get list of CA from surrounding residues
-    for i in range(-5, 6): #Check 5 residues before and after the central one
-        try:
-            af_res = af_chain[af_residue.get_id()[1] + i]
-            ref_res = ref_chain[ref_residue.get_id()[1] + i]
-            if af_res.get_resname() in gemmi.aminoacid_names and ref_res.get_resname() in gemmi.aminoacid_names:
-                af_ca_atoms.append(af_res["CA"].get_vector())
-                ref_ca_atoms.append(ref_res["CA"].get_vector())
-        except KeyError:
-            pass #If residue doesn't exist, skip
+        ref_residue = None
+        for ref_chain in ref_structure.chains:
+            if ref_chain.id == af_chain_id:
+                for ref_res in ref_chain.residues:
+                    if ref_res.name == af_res_name and ref_res.id == af_res_seqid:
+                        ref_residue = ref_res
+                        break
+                if ref_residue is not None:
+                  break
+        if ref_residue is None:
+            return None # Couldn't find matching residue
 
+        # Calculate LDDT
+        lddt_calculator = op.LDDTCalculator()
+        lddt_score = lddt_calculator.calculate(af_structure, ref_structure, [residue.get_id()[1]], chain_identifier = af_chain_id)[0] #Pass the residue number, not the whole residue
 
-    if len(af_ca_atoms) > 0 and len(ref_ca_atoms) > 0:
-        lddt_scores = []
+        return lddt_score * 100  # Convert to percentage
 
-        for i in range(len(af_ca_atoms)):
-            for j in range(i + 1, len(af_ca_atoms)):
-                af_dist = af_ca_atoms[i] - af_ca_atoms[j]
-                ref_dist = ref_ca_atoms[i] - ref_ca_atoms[j]
-                distance_diff = abs(af_dist.norm() - ref_dist.norm())
-                lddt_scores.append(1 / (1 + (distance_diff / 0.5) ** 2))
-        if len(lddt_scores) > 0:
-            lddt = sum(lddt_scores) / len(lddt_scores) * 100
-        else:
-            lddt = None
-        return lddt
-    else:
-        return None  # No CA atoms found, return None
+    except Exception as e:  # Catch potential errors (file issues, etc.)
+        print(f"Error in LDDT calculation: {e}")
+        return None
 
 
 def find_matching_residue(ref_model, residue):
@@ -231,15 +214,16 @@ def find_structural_motifs ( filename = "",
         residue_dict ['coordinates'] = residue[-1].pos.tolist()
 
       # LDDT calculation
-      ref_residue = find_matching_residue(ref_model, residue)
-      if ref_residue:
-        lddt_score = calculate_lddt(filename, reference, residue) # Pass the residue object directly
-        if lddt_score is not None:
-          residue_dict['lddt'] = "%.2f" % lddt_score
+      ref_residue = find_matching_residue(ref_model[0], residue)
+        if ref_residue:
+          lddt_score = calculate_lddt_openstructure(filename, reference, residue)
+          if lddt_score is not None:
+              residue_dict['lddt'] = "%.2f" % lddt_score
+          else:
+              residue_dict['lddt'] = "N/A"
         else:
-          residue_dict['lddt'] = "N/A"  # Handles cases where it can't calculate LDDT
-      else:
-        residue_dict['lddt'] = "N/A"  # Handles cases where it can't calculate LDDT
+          residue_dict['lddt'] = "N/A"
+
    
         hit.append ( residue_dict )
       hit_list.append ( hit )
