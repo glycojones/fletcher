@@ -8,7 +8,6 @@ import itertools
 import numpy as np
 from pathlib import Path
 from math import exp
-import openstructure as op
 
 DATA_DIR_PATH = os.path.join(os.path.dirname(__file__), 'data')
 LIBRARY_PATH = os.path.join(DATA_DIR_PATH, 'library.gz')
@@ -79,8 +78,6 @@ def plddt_to_bfact ( plddt = 0.0 ) :
   return min ( 999.99, 26.318945069571623 * (plddt_to_rmsd ( plddt ))**2)
 
 
-
-
 def create_script_file ( filename = "", list_of_hits = [ ] ) :
   with open ( filename.split('.')[0] + '.py', 'w' ) as file_out :
     file_out.write ( "# File programmatically created by Fletcher\n" )
@@ -98,49 +95,6 @@ def create_script_file ( filename = "", list_of_hits = [ ] ) :
     file_out.write ( '])\n')
     file_out.close ( )
 
-def calculate_lddt_openstructure(af_model_path, ref_model_path, residue):
-    """Calculates LDDT using OpenStructure."""
-    try:
-        af_structure = op.read_pdb(af_model_path)
-        ref_structure = op.read_pdb(ref_model_path)
-
-        # Find corresponding residues (important to handle chain and residue number/name correctly)
-        af_chain_id = residue.get_parent().id
-        af_res_seqid = residue.get_id()[1]
-        af_res_name = residue.get_resname()
-
-        ref_residue = None
-        for ref_chain in ref_structure.chains:
-            if ref_chain.id == af_chain_id:
-                for ref_res in ref_chain.residues:
-                    if ref_res.name == af_res_name and ref_res.id == af_res_seqid:
-                        ref_residue = ref_res
-                        break
-                if ref_residue is not None:
-                  break
-        if ref_residue is None:
-            return None # Couldn't find matching residue
-
-        # Calculate LDDT
-        lddt_calculator = op.LDDTCalculator()
-        lddt_score = lddt_calculator.calculate(af_structure, ref_structure, [residue.get_id()[1]], chain_identifier = af_chain_id)[0] #Pass the residue number, not the whole residue
-
-        return lddt_score * 100  # Convert to percentage
-
-    except Exception as e:  # Catch potential errors (file issues, etc.)
-        print(f"Error in LDDT calculation: {e}")
-        return None
-
-
-def find_matching_residue(ref_model, residue):
-    """Finds the corresponding residue in the reference model based on chain ID and sequence ID."""
-    for ref_chain in ref_model:  # Iterate through chains in the reference model
-        if ref_chain.id == residue.get_parent().id: # Check if the chains are the same
-          for ref_residue in ref_chain:
-            if ref_residue.get_resname() == residue.get_resname() and ref_residue.get_id()[1] == residue.get_id()[1]:  # Compare seqid and residue name
-                return ref_residue
-    return None  # Return None if no match is found
-
 
 def find_structural_motifs ( filename = "",
                              residue_lists = [ ],
@@ -148,10 +102,8 @@ def find_structural_motifs ( filename = "",
                              min_plddt = 70.0,
                              n_term = False,
                              c_term = False,
-                             reference = "",
                             ) :
-                                
-  ref_model = gemmi.read_structure(reference)  # Load the reference structure
+  
   af_model = gemmi.read_structure ( filename )
   neighbour_search = gemmi.NeighborSearch ( af_model[0], af_model.cell, distance ).populate ( include_h=False )
   first_residues = gemmi.Selection ( '(' + residue_lists[0][0] + ')' ) 
@@ -212,22 +164,9 @@ def find_structural_motifs ( filename = "",
         else :
           residue_dict['plddt'] = '%.2f' % residue[-1].b_iso
         residue_dict ['coordinates'] = residue[-1].pos.tolist()
-
-     # LDDT calculation using OpenStructure
-          ref_residue = find_matching_residue(ref_model[0], residue)  # Correct indentation
-          if ref_residue:  # Correct indentation
-              lddt_score = calculate_lddt_openstructure(filename, reference, residue)
-              if lddt_score is not None:
-                  residue_dict['lddt'] = "%.2f" % lddt_score
-              else:
-                  residue_dict['lddt'] = "N/A"
-          else:
-              residue_dict['lddt'] = "N/A"
-
-          hit.append(residue_dict)
-      hit_list.append(hit)
-      print("Hit found:", hit)
-
+        hit.append ( residue_dict )
+      hit_list.append ( hit )
+      print ( "Hit found:", hit )
 
     result_dict['hits'] = hit_list
 
@@ -272,11 +211,7 @@ if __name__ == '__main__':
                         help = 'Require one residue to be at the c-terminus', \
                         choices = [ 'yes', 'no' ], \
                         default = 'no' )
-    
-  parser.add_argument ( '-ref', '--reference', \
-                       help = "Reference Model for LDDT comparison.", \
-                       required = True )
-    
+
   args = parser.parse_args ( )
   
   # Assuming argparse has got the right number of parameters beyond this point
@@ -304,9 +239,7 @@ if __name__ == '__main__':
           min_plddt,
           "\nN-term: ", n_term,
           "\nC-term: ", c_term,
-          "\nReference Model: ", args.reference,
           "\n" )
   
   if len ( list_of_residues ) > 1 and distance > 0.0 :
-    find_structural_motifs ( args.filename, list_of_residues, distance, min_plddt, n_term, c_term, args.reference )
-
+    find_structural_motifs ( args.filename, list_of_residues, distance, min_plddt, n_term, c_term )
