@@ -98,7 +98,7 @@ def create_script_file ( filename = "", list_of_hits = [ ] ) :
     file_out.write ( '])\n')
     file_out.close ( )
 
-def calculate_lddt(af_model_path, ref_model_path, residue1_chain_id, residue1_seqid):
+def calculate_lddt(af_model_path, ref_model_path, residue):
     """Calculates LDDT using Bio.PDB (Corrected - No Superimposition)."""
     parser = PDBParser()
     af_structure = parser.get_structure("AF", af_model_path)
@@ -232,7 +232,7 @@ def find_structural_motifs ( filename = "",
       # LDDT calculation
       ref_residue = find_matching_residue(ref_model, residue)
       if ref_residue:
-        lddt_score = calculate_lddt(filename, reference, str(residue.chain.id), residue.seqid.num)
+        lddt_score = calculate_lddt(filename, reference, residue) # Pass the residue object directly
         if lddt_score is not None:
           residue_dict['lddt'] = "%.2f" % lddt_score
         else:
