@@ -215,19 +215,19 @@ def find_structural_motifs ( filename = "",
 
       # LDDT calculation
       ref_residue = find_matching_residue(ref_model[0], residue)
-      if ref_residue:
-          lddt_score = calculate_lddt_openstructure(filename, reference, residue)
-          if lddt_score is not None:
-              residue_dict['lddt'] = "%.2f" % lddt_score
-          else:
-              residue_dict['lddt'] = "N/A"
-      else:
-          residue_dict['lddt'] = "N/A"
+     ref_residue = find_matching_residue(ref_model[0], residue)  # Correct indentation here
+            if ref_residue:  # Correct indentation here
+                lddt_score = calculate_lddt_openstructure(filename, reference, residue)
+                if lddt_score is not None:
+                    residue_dict['lddt'] = "%.2f" % lddt_score
+                else:
+                    residue_dict['lddt'] = "N/A"
+            else:
+                residue_dict['lddt'] = "N/A"
 
-   
-      hit.append ( residue_dict )
-      hit_list.append ( hit )
-      print ( "Hit found:", hit )
+            hit.append(residue_dict)
+        hit_list.append(hit)
+        print("Hit found:", hit)
 
     result_dict['hits'] = hit_list
 
