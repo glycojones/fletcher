@@ -221,11 +221,11 @@ def find_structural_motifs ( filename = "",
               residue_dict['lddt'] = "%.2f" % lddt_score
           else:
               residue_dict['lddt'] = "N/A"
-       else:
+      else:
           residue_dict['lddt'] = "N/A"
 
    
-        hit.append ( residue_dict )
+      hit.append ( residue_dict )
       hit_list.append ( hit )
       print ( "Hit found:", hit )
 
