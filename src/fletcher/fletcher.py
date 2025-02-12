@@ -150,10 +150,11 @@ def calculate_lddt(af_model_path, ref_model_path, residue):
 
 
 def find_matching_residue(ref_model, residue):
-    """Finds the corresponding residue in the reference model based on sequence ID."""
-    for ref_chain in ref_model[0]:  # Assuming only one model in reference
-        for ref_residue in ref_chain:
-            if ref_residue.seqid == residue.seqid:  # Compare seqid
+    """Finds the corresponding residue in the reference model based on chain ID and sequence ID."""
+    for ref_chain in ref_model:  # Iterate through chains in the reference model
+        if ref_chain.id == residue.get_parent().id: # Check if the chains are the same
+          for ref_residue in ref_chain:
+            if ref_residue.get_resname() == residue.get_resname() and ref_residue.get_id()[1] == residue.get_id()[1]:  # Compare seqid and residue name
                 return ref_residue
     return None  # Return None if no match is found
 
