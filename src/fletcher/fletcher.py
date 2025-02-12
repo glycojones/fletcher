@@ -6,8 +6,10 @@ import json
 import pickle
 import itertools
 import numpy as np
+import openstructure as op
 from pathlib import Path
 from math import exp
+
 
 DATA_DIR_PATH = os.path.join(os.path.dirname(__file__), 'data')
 LIBRARY_PATH = os.path.join(DATA_DIR_PATH, 'library.gz')
