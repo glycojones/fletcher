@@ -7,17 +7,96 @@ import pickle
 import itertools
 import numpy as np
 from pathlib import Path
-from math import exp
+from math import acos, atan2, degrees, exp
 
 DATA_DIR_PATH = os.path.join(os.path.dirname(__file__), 'data')
 LIBRARY_PATH = os.path.join(DATA_DIR_PATH, 'library.gz')
 library_data = None
+
+
+CHI_ATOMS = [ { ('N', 'CA', 'CB', 'CG') : ('ARG', 'ASN', 'ASP', 'GLN', 'GLU', 'HIS', 'LEU', 'LYS',
+                                           'MET', 'PHE', 'PRO', 'TRP', 'TYR', 'MSE'),
+                ('N', 'CA', 'CB', 'CG1') : ('ILE', 'VAL'),
+                ('N', 'CA', 'CB', 'SG') : ('CYS'),
+                ('N', 'CA', 'CB', 'SE') : ('SEC'),
+                ('N', 'CA', 'CB', 'OG') : ('SER'),
+                ('N', 'CA', 'CB', 'OG1') : ('THR') },
+              { ('CA', 'CB', 'CG', 'CD') : ('ARG', 'GLN', 'GLU', 'LYS', 'PRO'),
+                ('CA', 'CB', 'CG', 'CD1') : ('LEU', 'PHE', 'TRP', 'TYR'),
+                ('CA', 'CB', 'CG', 'OD1') : ('ASN', 'ASP'),
+                ('CA', 'CB', 'CG', 'ND1') : ('HIS'),
+                ('CA', 'CB', 'CG1', 'CD1') : ('ILE'),
+                ('CA', 'CB', 'CG', 'SD') : ('MET'),
+                ('CA', 'CB', 'CG', 'SE') : ('MSE') },
+              { ('CB', 'CG', 'CD', 'OE1') : ('GLN', 'GLU'),
+                ('CB', 'CG', 'CD', 'NE') : ('ARG'),
+                ('CB', 'CG', 'CD', 'CE') : ('LYS'),
+                ('CB', 'CG', 'SD', 'CE') : ('MET'),
+                ('CB', 'CG', 'SE', 'CE') : ('MSE') },
+              { ('CG', 'CD', 'NE', 'CZ') : ('ARG'),
+                ('CG', 'CD', 'CE', 'NZ') : ('LYS') },
+              { ('CD', 'NE', 'CZ', 'NH1') : ('ARG') } ]
+
+def subtract(xyz1, xyz2):
+    return [ xyz1[0] - xyz2[0], xyz1[1] - xyz2[1], xyz1[2] - xyz2[2] ]
 
 def product(x):
     result = 1
     for x_i in x:
         result *= x_i
     return result
+
+def dot_product(xyz1, xyz2):
+    return xyz1[0] * xyz2[0] + xyz1[1] * xyz2[1] + xyz1[2] * xyz2[2]
+
+
+def cross_product(xyz1, xyz2):
+    return [ xyz1[1] * xyz2[2] - xyz1[2] * xyz2[1],
+             xyz1[2] * xyz2[0] - xyz1[0] * xyz2[2],
+             xyz1[0] * xyz2[1] - xyz1[1] * xyz2[0] ]
+
+def torsion(xyz1, xyz2, xyz3, xyz4, range_positive=False):
+    b1 = subtract(xyz2, xyz1)
+    b2 = subtract(xyz3, xyz2)
+    b3 = subtract(xyz4, xyz3)
+    n1 = cross_product(b1, b2)
+    n2 = cross_product(b2, b3)
+    m1 = cross_product(n1, n2)
+    y = dot_product(m1, unit(b2))
+    x = dot_product(n1, n2)
+    result = degrees(atan2(y, x))
+    if range_positive and result < 0:
+        result += 360
+    elif not range_positive and result > 180:
+        result -= 360
+    return result
+
+
+def calculate_chis(residue):
+    chis = [ ]
+    for i in range(5):
+        chi_atoms = [ ]
+        has_chi = any(residue.name in residues for residues in list(CHI_ATOMS[i].values()))
+        if not has_chi:
+            return chis
+        required_atom_names = next(atoms for atoms, residues in CHI_ATOMS[i].items() if residue.name in residues)
+        missing_atom_names = [ ]
+        for required_atom_name in required_atom_names:
+            found = False
+            for atom in residue:
+                atom_name = atom.name.replace(' ', '') # No idea if we'll need .replace 
+                if atom_name in (required_atom_name, required_atom_name + ':A'):
+                    chi_atoms.append(atom)
+                    found = True
+            if not found:
+                missing_atom_names.append(required_atom_name)
+        if len(chi_atoms) < 4:
+            chis.append(None)
+            continue
+        xyzs = [ (atom.pos.x, atom.pos.y, atom.pos.z) for atom in chi_atoms ]
+        chis.append(torsion(xyzs[0], xyzs[1], xyzs[2], xyzs[3]))
+    return tuple(chis)
+
 
 def unpack_bytes(in_bytes):
     try:
@@ -33,6 +112,7 @@ def unpack_bytes(in_bytes):
         unpacked = [ bits for byte in replaced for bits in byte ]
     return unpacked
 
+
 def load_rotamer_data():
         with gzip.open(LIBRARY_PATH, 'rb') as infile:
             dim_offsets, dim_bin_ranges, dim_bin_widths, dim_num_options, compressed_byte_arrays = pickle.load(infile)
@@ -41,6 +121,7 @@ def load_rotamer_data():
             compressed = bytearray(compressed)
             classifications[code] = unpack_bytes(compressed)
         library_data = (dim_offsets, dim_bin_ranges, dim_bin_widths, dim_num_options, classifications)
+
 
 def get_classification(code, chis):
     dim_offsets, dim_bin_ranges, dim_bin_widths, dim_num_options, classifications = library_data
@@ -159,6 +240,7 @@ def find_structural_motifs ( filename = "",
         residue_dict = { }
         residue_dict['name']  = residue.name
         residue_dict['seqid'] = str(residue.seqid)
+        residue_dict['rotamer'] = get_classification(residue.name, calculate_chis(residue))
         if residue[-1].b_iso < min_plddt :
           residue_dict['plddt'] = 'LOW PLDDT: %.2f' % residue[-1].b_iso
         else :
