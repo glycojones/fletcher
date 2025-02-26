@@ -55,6 +55,13 @@ def cross_product(xyz1, xyz2):
              xyz1[2] * xyz2[0] - xyz1[0] * xyz2[2],
              xyz1[0] * xyz2[1] - xyz1[1] * xyz2[0] ]
 
+def magnitude(xyz):
+  return (xyz[0]**2 + xyz[1]**2 + xyz[2]**2) ** 0.5
+
+def unit(xyz):
+    length = magnitude(xyz)
+    return [ xyz[0] / length, xyz[1] / length, xyz[2] / length ]
+
 def torsion(xyz1, xyz2, xyz3, xyz4, range_positive=False):
     b1 = subtract(xyz2, xyz1)
     b2 = subtract(xyz3, xyz2)
