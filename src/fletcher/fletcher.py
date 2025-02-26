@@ -191,7 +191,7 @@ def find_structural_motifs ( filename = "",
                              n_term = False,
                              c_term = False,
                             ) :
-  
+  load_rotamer_data()
   af_model = gemmi.read_structure ( filename )
   neighbour_search = gemmi.NeighborSearch ( af_model[0], af_model.cell, distance ).populate ( include_h=False )
   first_residues = gemmi.Selection ( '(' + residue_lists[0][0] + ')' ) 
