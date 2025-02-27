@@ -127,10 +127,12 @@ def load_rotamer_data():
         for code, compressed in compressed_byte_arrays.items():
             compressed = bytearray(compressed)
             classifications[code] = unpack_bytes(compressed)
+        global library_data
         library_data = (dim_offsets, dim_bin_ranges, dim_bin_widths, dim_num_options, classifications)
 
 
 def get_classification(code, chis):
+    global library_data
     dim_offsets, dim_bin_ranges, dim_bin_widths, dim_num_options, classifications = library_data
     if  None in chis:
         return
@@ -247,7 +249,7 @@ def find_structural_motifs ( filename = "",
         residue_dict = { }
         residue_dict['name']  = residue.name
         residue_dict['seqid'] = str(residue.seqid)
-        residue_dict['rotamer'] = get_classification(residue.name, calculate_chis(residue))
+        residue_dict['rotamer'] = str(get_classification(residue.name, calculate_chis(residue)))
         if residue[-1].b_iso < min_plddt :
           residue_dict['plddt'] = 'LOW PLDDT: %.2f' % residue[-1].b_iso
         else :
