@@ -282,7 +282,7 @@ if __name__ == '__main__':
                         required = True )                  
 
   parser.add_argument ( '-r', '--residues', \
-                        help = "A list of residues in one-letter code, comma separated, and including alternatives, e.g. L,A,FWY.", \
+                        help = "A list of residues in one-letter code, comma separated, including alternatives, e.g. H:1,H:2,F:1~W:3:2~Y", \
                         default = "GF", required = True )                       
 
   parser.add_argument ( '-d', '--distance', \
@@ -312,8 +312,16 @@ if __name__ == '__main__':
           "\nLatest source code: https://github.com/glycojones/fletcher"\
           "\nBug reports to jon.agirre@york.ac.uk\n\n" )
 
-  input_residues = args.residues.split(',')
-  list_of_residues = [ ]
+  input_rotamers = args.residues.split(',')
+
+  list_of_items = [
+        [item.split(':') for item in slot.split('~')] 
+        for slot in input_rotamers
+    ]
+
+  print (list_of_items)
+  exit()
+  input_residues = [ ]
 
   for slot in input_residues :
     list_of_residues.append ( gemmi.expand_one_letter_sequence(slot, gemmi.ResidueKind.AA) )
