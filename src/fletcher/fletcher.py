@@ -319,9 +319,8 @@ if __name__ == '__main__':
         for slot in input_rotamers
     ]
 
-  print (list_of_items)
-  exit()
-  input_residues = [ ]
+  input_residues = ["".join(entry[0] for entry in item) for item in list_of_items]
+  list_of_residues = [ ]
 
   for slot in input_residues :
     list_of_residues.append ( gemmi.expand_one_letter_sequence(slot, gemmi.ResidueKind.AA) )
@@ -333,7 +332,8 @@ if __name__ == '__main__':
 
   print ( "Running Fletcher with the following parameters:\nFilename: ", 
           args.filename, "\nResidue list: ", 
-          list_of_residues, "\nDistance: ", 
+          list_of_residues, "\nRotamer list: ",
+          list_of_items, "\nDistance: ", 
           distance, "\npLDDT: ",
           min_plddt,
           "\nN-term: ", n_term,
