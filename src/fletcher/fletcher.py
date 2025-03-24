@@ -188,6 +188,7 @@ def create_script_file ( filename = "", list_of_hits = [ ] ) :
 
 def find_structural_motifs ( filename = "",
                              residue_lists = [ ],
+                             rotamer_lists = [],
                              distance = 0.0,
                              min_plddt = 70.0,
                              n_term = False,
@@ -241,7 +242,8 @@ def find_structural_motifs ( filename = "",
     result_dict['residue_lists'] = str(residue_lists)
     result_dict['distance'] = distance
     result_dict['plddt'] = min_plddt
-    hit_list = [ ]
+    hit_list = []
+    match_list = []
 
     for result in result_list :
       hit = [ ]
@@ -256,15 +258,16 @@ def find_structural_motifs ( filename = "",
           residue_dict['plddt'] = '%.2f' % residue[-1].b_iso
         residue_dict ['coordinates'] = residue[-1].pos.tolist()
         hit.append ( residue_dict )
-      hit_list.append ( hit )
-      print ( "Hit found:", hit )
-
+        match = filter_for_residue_and_rotamer_match(converted_output, hit)
+    match_list.append(match)
+    hit_list.append(hit)
+    print ("Match found:", match)
     result_dict['hits'] = hit_list
 
-    with open ( filename.split('.')[0] + '.json', 'w' ) as file_out :
-      json.dump ( result_dict, file_out, sort_keys=False, indent=4 )
+    with open (filename.split('.')[0] + '.json', 'w' ) as file_out:
+      json.dump (result_dict, file_out, sort_keys=False, indent=4)
     
-    create_script_file ( filename, hit_list )
+    create_script_file (filename, hit_list)
   
   else :
     print ("\nNo results found :-( \n")
@@ -311,13 +314,17 @@ if __name__ == '__main__':
           "\nConcept: Federico Sabbaddin & Jon Agirre, University of York, UK."\
           "\nLatest source code: https://github.com/glycojones/fletcher"\
           "\nBug reports to jon.agirre@york.ac.uk\n\n" )
+  
+  input_criteria = args.residues.split(',')
 
-  input_rotamers = args.residues.split(',')
+  # input_criteria ['K:2', 'H:3', 'A~F~W:3']
 
   list_of_items = [
         [item.split(':') for item in slot.split('~')] 
-        for slot in input_rotamers
+        for slot in input_criteria
     ]
+
+  # list_of_items [[['K', '2']], [['H', '3']], [['A'], ['F'], ['W', '3']]]
 
   input_residues = ["".join(entry[0] for entry in item) for item in list_of_items]
   list_of_residues = [ ]
@@ -325,21 +332,60 @@ if __name__ == '__main__':
   for slot in input_residues :
     list_of_residues.append ( gemmi.expand_one_letter_sequence(slot, gemmi.ResidueKind.AA) )
 
+  # print("input_residues", input_residues)
+  # input_residues ['K', 'H', 'AFW']
+  # print("list_of_residues", list_of_residues)
+  # list_of_residues [['LYS'], ['HIS'], ['ALA', 'PHE', 'TRP']]
+
+  # choose the second object in each list within each list in list_of_items if there actually is a rotamer specified
+  list_of_rotamers = [
+    [[entry[1]] if len(entry) > 1 else [''] for entry in item]  
+    for item in list_of_items
+  ]
+
+  # print("list_of_rotamers", list_of_rotamers)
+  # list_of_rotamers [[['2']], [['3']], [[''], [''], ['3']]]
+
+  def convert_to_nested_dict(list_of_residues, list_of_rotamers):
+    result = []
+    for names_group, rotamers_group in zip(list_of_residues, list_of_rotamers):
+        sub_result = []
+        for name, rotamer_list in zip(names_group, rotamers_group):
+            rotamer = rotamer_list[-1] if rotamer_list else ''
+            sub_result.append({'name': name, 'rotamer': rotamer})
+        result.append(sub_result)
+    return result
+  
+  converted_output = convert_to_nested_dict(list_of_residues, list_of_rotamers)
+  # print("Converted output:", converted_output)
+  # Converted output: [[{'name': 'LYS', 'rotamer': '2'}], [{'name': 'HIS', 'rotamer': '3'}], [{'name': 'ALA', 'rotamer': ''}, {'name': 'PHE', 'rotamer': ''}, {'name': 'TRP', 'rotamer': '3'}]]
+
+  def filter_for_residue_and_rotamer_match(converted_output, potential_hit):
+    match = []
+    for potential_hit_list in potential_hit:
+      for converted_output_list in converted_output:
+        for converted_output_sublist in converted_output_list:
+          if potential_hit_list['name'] == converted_output_sublist['name']:
+            if potential_hit_list['rotamer'] == converted_output_sublist['rotamer'] or converted_output_sublist['rotamer'] == '':
+              match.append(potential_hit_list)
+    if len(match) >= len(converted_output):
+      return match
+
   distance = float ( args.distance )
   min_plddt = float ( args.plddt )
   n_term = True if args.nterm == 'yes' else False
   c_term = True if args.cterm == 'yes' else False
 
-  print ( "Running Fletcher with the following parameters:\nFilename: ", 
-          args.filename, "\nResidue list: ", 
-          list_of_residues, "\nRotamer list: ",
-          list_of_items, "\nDistance: ", 
-          distance, "\npLDDT: ",
-          min_plddt,
+  print ( "Running Fletcher with the following parameters:\n"
+          "\nFilename: ", args.filename, 
+          "\nResidue list: ", list_of_residues, 
+          "\nRotamer list: ", list_of_rotamers, 
+          "\nDistance: ", distance, 
+          "\npLDDT: ", min_plddt,
           "\nN-term: ", n_term,
           "\nC-term: ", c_term,
           "\n" )
-  
+
   if len ( list_of_residues ) > 1 and distance > 0.0 :
-    find_structural_motifs ( args.filename, list_of_residues, distance, min_plddt, n_term, c_term )
+    find_structural_motifs ( args.filename, list_of_residues, list_of_rotamers, distance, min_plddt, n_term, c_term )
 
