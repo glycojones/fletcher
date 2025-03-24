@@ -168,19 +168,19 @@ def plddt_to_bfact ( plddt = 0.0 ) :
   return min ( 999.99, 26.318945069571623 * (plddt_to_rmsd ( plddt ))**2)
 
 
-def create_script_file ( filename = "", list_of_hits = [ ] ) :
+def create_script_file ( filename = "", list_of_matches = [ ] ) :
   with open ( filename.split('.')[0] + '.py', 'w' ) as file_out :
     file_out.write ( "# File programmatically created by Fletcher\n" )
     file_out.write ( 'handle_read_draw_molecule_with_recentre ("%s", 1)\n' % filename )
     file_out.write ( 'interesting_things_gui ("Results from Fletcher",[\n')
-    for hit in list_of_hits :
+    for match in list_of_matches :
       file_out.write ( '["%s %s", %.3f, %.3f, %.3f, ]' \
-                                % ( hit[0].get('name'), \
-                                    hit[0].get('seqid'), \
-                                    hit[0].get('coordinates')[0], \
-                                    hit[0].get('coordinates')[1], \
-                                    hit[0].get('coordinates')[2] ))
-      if hit is not list_of_hits[-1] :
+                                % ( match[0].get('name'), \
+                                    match[0].get('seqid'), \
+                                    match[0].get('coordinates')[0], \
+                                    match[0].get('coordinates')[1], \
+                                    match[0].get('coordinates')[2] ))
+      if match is not list_of_matches[-1] :
         file_out.write(',\n')
     file_out.write ( '])\n')
     file_out.close ( )
@@ -212,7 +212,6 @@ def find_structural_motifs ( filename = "",
             found_in_contacts = False
             for mark in marks :
               cra = mark.to_cra ( af_model[0] )
-              
               # We do the following conversion to harness gemmi's translation of modified residue codes
               # into the unmodified ones, e.g. HIC (methylated histidine) >> HIS (normal histidine)
               if gemmi.find_tabulated_residue(candidate).one_letter_code.upper() == \
@@ -232,10 +231,10 @@ def find_structural_motifs ( filename = "",
                   in_terminus = True
                 elif c_term and residue.seqid.num == chain[-1].seqid.num :
                   in_terminus = True
-              if in_terminus : result_list.append ( partial_result )
+              if in_terminus : result_list.append (partial_result)
             else :
-              result_list.append ( partial_result )
-            
+              result_list.append (partial_result)
+
   if len ( result_list ) > 0 :
     Path ( filename ).touch() # We want results at the top
     result_dict['filename'] = filename
@@ -260,15 +259,14 @@ def find_structural_motifs ( filename = "",
         hit.append ( residue_dict )
         match = filter_for_residue_and_rotamer_match(converted_output, hit)
     match_list.append(match)
-    hit_list.append(hit)
     print ("Match found:", match)
-    result_dict['hits'] = hit_list
+    result_dict['matches'] = match_list
 
     with open (filename.split('.')[0] + '.json', 'w' ) as file_out:
       json.dump (result_dict, file_out, sort_keys=False, indent=4)
     
-    create_script_file (filename, hit_list)
-  
+    create_script_file (filename, match_list)
+
   else :
     print ("\nNo results found :-( \n")
   return result_dict
