@@ -174,12 +174,13 @@ def create_script_file ( filename = "", list_of_matches = [ ] ) :
     file_out.write ( 'handle_read_draw_molecule_with_recentre ("%s", 1)\n' % filename )
     file_out.write ( 'interesting_things_gui ("Results from Fletcher",[\n')
     for match in list_of_matches :
-      file_out.write ( '["%s %s", %.3f, %.3f, %.3f, ]' \
-                                % ( match[0].get('name'), \
-                                    match[0].get('seqid'), \
-                                    match[0].get('coordinates')[0], \
-                                    match[0].get('coordinates')[1], \
-                                    match[0].get('coordinates')[2] ))
+      if match is not None :
+        file_out.write ( '["%s %s", %.3f, %.3f, %.3f, ]' \
+                                  % ( match[0].get('name'), \
+                                      match[0].get('seqid'), \
+                                      match[0].get('coordinates')[0], \
+                                      match[0].get('coordinates')[1], \
+                                      match[0].get('coordinates')[2] ))
       if match is not list_of_matches[-1] :
         file_out.write(',\n')
     file_out.write ( '])\n')
@@ -258,8 +259,11 @@ def find_structural_motifs ( filename = "",
         residue_dict ['coordinates'] = residue[-1].pos.tolist()
         hit.append ( residue_dict )
         match = filter_for_residue_and_rotamer_match(converted_output, hit)
-    match_list.append(match)
-    print ("Match found:", match)
+    
+      if match is not None: 
+        match_list.append(match)
+        print ("Match found:", match)
+    
     result_dict['matches'] = match_list
 
     with open (filename.split('.')[0] + '.json', 'w' ) as file_out:
