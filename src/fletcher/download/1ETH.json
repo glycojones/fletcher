@@ -1,0 +1,542 @@
+{
+    "filename": "download/1ETH.pdb",
+    "residue_lists": "['H', 'H', 'A~F~W']",
+    "distance": 8.9,
+    "plddt": 70.0,
+    "number of hits": 13,
+    "hits": [
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "76",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        48.417,
+                        40.269,
+                        131.858
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "152",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        60.202,
+                        38.145,
+                        125.518
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "PHE",
+                    "seqid": "39",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        41.561,
+                        35.653,
+                        135.948
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "148",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        58.02,
+                        27.578,
+                        134.108
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "310",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        56.376,
+                        19.871,
+                        130.985
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "ALA",
+                    "seqid": "312",
+                    "rotamer": "None",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        63.763,
+                        22.641,
+                        131.105
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "152",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        60.202,
+                        38.145,
+                        125.518
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "264",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        60.332,
+                        40.781,
+                        127.537
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "TRP",
+                    "seqid": "86",
+                    "rotamer": "2",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        52.831,
+                        37.837,
+                        125.086
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "157",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        63.227,
+                        42.489,
+                        135.104
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "152",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        60.202,
+                        38.145,
+                        125.518
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "ALA",
+                    "seqid": "179",
+                    "rotamer": "None",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        62.072,
+                        41.225,
+                        132.787
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "204",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        69.5,
+                        34.728,
+                        133.104
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "224",
+                    "rotamer": "1",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        66.688,
+                        26.656,
+                        143.385
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "PHE",
+                    "seqid": "228",
+                    "rotamer": "2",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        72.42,
+                        30.313,
+                        127.657
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "264",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        60.332,
+                        40.781,
+                        127.537
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "152",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        60.202,
+                        38.145,
+                        125.518
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "TRP",
+                    "seqid": "86",
+                    "rotamer": "2",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        52.831,
+                        37.837,
+                        125.086
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "310",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        56.376,
+                        19.871,
+                        130.985
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "148",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        58.02,
+                        27.578,
+                        134.108
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "PHE",
+                    "seqid": "95",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        49.298,
+                        21.46,
+                        125.893
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "148",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        86.076,
+                        28.573,
+                        155.536
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "310",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        87.655,
+                        20.849,
+                        158.588
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "PHE",
+                    "seqid": "199",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        81.944,
+                        28.077,
+                        147.446
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "152",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        83.839,
+                        39.144,
+                        164.097
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "204",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        74.567,
+                        35.803,
+                        156.445
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "TRP",
+                    "seqid": "86",
+                    "rotamer": "2",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        91.3,
+                        38.715,
+                        164.648
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "157",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        80.958,
+                        43.483,
+                        154.595
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "152",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        83.839,
+                        39.144,
+                        164.097
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "PHE",
+                    "seqid": "183",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        78.558,
+                        47.786,
+                        153.538
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "204",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        74.567,
+                        35.803,
+                        156.445
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "224",
+                    "rotamer": "1",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        77.36,
+                        27.877,
+                        146.035
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "PHE",
+                    "seqid": "228",
+                    "rotamer": "2",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        71.626,
+                        31.338,
+                        161.839
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "264",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        83.776,
+                        41.76,
+                        162.151
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "152",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        83.839,
+                        39.144,
+                        164.097
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "TRP",
+                    "seqid": "86",
+                    "rotamer": "2",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        91.3,
+                        38.715,
+                        164.648
+                    ]
+                }
+            ]
+        ],
+        [
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "310",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        87.655,
+                        20.849,
+                        158.588
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "HIS",
+                    "seqid": "148",
+                    "rotamer": "3",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        86.076,
+                        28.573,
+                        155.536
+                    ]
+                }
+            ],
+            [
+                {
+                    "name": "ALA",
+                    "seqid": "312",
+                    "rotamer": "None",
+                    "plddt": "LOW PLDDT: 0.00",
+                    "coordinates": [
+                        80.299,
+                        23.694,
+                        158.347
+                    ]
+                }
+            ]
+        ]
+    ]
+}
