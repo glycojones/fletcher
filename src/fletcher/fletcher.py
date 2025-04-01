@@ -317,23 +317,21 @@ def find_structural_motifs ( filename = "",
 
                         candidate = {
                             'name': cra.residue.name,
-                            'seqid': str(cra.residue.seqid.num),  # If you want to track positions
+                            'seqid': str(cra.residue.seqid.num),  
                             'rotamer': str(get_classification(cra.residue.name, calculate_chis(cra.residue))),
                             'plddt': ('LOW PLDDT: %.2f' % cra.residue[-1].b_iso) if cra.residue[-1].b_iso < min_plddt else ('%.2f' % cra.residue[-1].b_iso),
                             'coordinates': cra.residue[-1].pos.tolist()
                         }
 
                         for i, entry in enumerate(residue_info_list_of_dict[1:], start=1):
-                            if not hit[i]:  # Only try to fill empty slots
+                            if not hit[i]: 
                                 for entry_entry in entry:
                                     if candidate['name'] == entry_entry['name']:
                                         if candidate['rotamer'] == entry_entry['rotamer'] or \
                                         'None' in (candidate['rotamer'], entry_entry['rotamer']):
                                             if candidate not in hit[0]:
                                                 hit[i].append(candidate)
-                                                # print(f"✅ Match found at entry {i}:", hit)
                                                 if all(len(slot) > 0 for slot in hit):
-                                                    # print("✅ All positions in 'hit' are filled!", hit)
 
                                                     hit_string = json.dumps(hit, sort_keys = True)
                                                     if hit_string not in list_of_hits:
