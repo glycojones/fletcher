@@ -253,8 +253,6 @@ filename = args.filename
 residue_info_list = args.residues.split(',')
 distance = float ( args.distance )
 min_plddt = float ( args.plddt )
-n_term = True if args.nterm == 'yes' else False
-c_term = True if args.cterm == 'yes' else False
 
 ###############################################################
 # default print
@@ -269,10 +267,8 @@ print ( "Running Fletcher with the following parameters:\n"
           "\nFilename: ", filename, 
           "\nResidue list: ", residue_info_list, 
           "\nDistance: ", distance, 
-          "\npLDDT: ", min_plddt,
-          "\nN-term: ", n_term,
-          "\nC-term: ", c_term,
-          "\n" )
+          "\npLDDT: ", min_plddt 
+          )
 
 ###############################################################
 # main function definition
@@ -301,6 +297,7 @@ def find_structural_motifs ( filename = "",
                     'name': residue.name,
                     'seqid': str(residue.seqid),
                     'rotamer': str(get_classification(residue.name, calculate_chis(residue))),
+                    ########## all are coming out as 0.0 below
                     'plddt': ('LOW PLDDT: %.2f' % residue[-1].b_iso) if residue[-1].b_iso < min_plddt else ('%.2f' % residue[-1].b_iso),
                     'coordinates': residue[-1].pos.tolist()
                 }
