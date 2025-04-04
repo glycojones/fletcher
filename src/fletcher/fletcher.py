@@ -160,9 +160,9 @@ def get_classification(code, chis):
     closest_values = tuple(closest_values)
     index = 0
     for dimension, chi in enumerate(closest_values):
-        dim_offest = dim_offsets[code][dimension]
+        dim_offset = dim_offsets[code][dimension]
         dim_bin_width = dim_bin_widths[code][dimension]
-        index += int((chi - dim_offest) / dim_bin_width * product(dim_num_options[code][dimension+1:]))
+        index += int((chi - dim_offset) / dim_bin_width * product(dim_num_options[code][dimension+1:]))
     return classifications[code][index]
 
 
@@ -201,7 +201,7 @@ def create_script_file ( filename = "", list_of_hits = [ ] ) :
                                         hit['coordinates'][0], \
                                         hit['coordinates'][1], \
                                         hit['coordinates'][2] ))
-        if list is not list_of_hits[-1] :
+        if hit != list_of_hits[-1] :
             file_out.write(',\n')
     file_out.write ( '])\n')
     file_out.close ( )
@@ -226,11 +226,11 @@ if __name__ == '__main__':
                         default = "GF", required = True )                       
 
   parser.add_argument ( '-d', '--distance', \
-                        help = "Specifies how far each of the residues can be from the rest, in Angstroems.", \
+                        help = "Specifies how far each of the residues can be from the rest, in Angstroms.", \
                         default = "0.0", required = True )  
 
   parser.add_argument ( '-p', '--plddt', \
-                        help = "Flag up candidate residues with average pLDDT below thresold (Jumper et al., 2020).", \
+                        help = "Flag up candidate residues with average pLDDT below threshold (Jumper et al., 2020).", \
                         default = "70.0", required = False )
   
   parser.add_argument ( '-n', '--nterm', \
