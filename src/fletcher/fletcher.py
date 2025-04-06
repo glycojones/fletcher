@@ -267,7 +267,8 @@ print ( "Running Fletcher with the following parameters:\n"
           "\nFilename: ", filename, 
           "\nResidue list: ", residue_info_list, 
           "\nDistance: ", distance, 
-          "\npLDDT: ", min_plddt 
+          "\npLDDT: ", min_plddt,
+          "\n" 
           )
 
 ###############################################################
@@ -332,10 +333,12 @@ def find_structural_motifs ( filename = "",
 
                                                     hit_string = json.dumps(hit, sort_keys = False)
                                                     if hit_string not in list_of_hits:
-                                                        list_of_hits.append(hit)
-                                                        print("hit\n", hit)
+                                                        list_of_hits.append(hit)    
                                                         break 
-                                                        
+
+    print("list_of_hits:\n")
+    for idx, hit in enumerate(list_of_hits, start=1):
+        print(f"Hit {idx}:\n{hit}\n")                                                  
     print("number of hits", len(list_of_hits))
 
     result_dict = { }
