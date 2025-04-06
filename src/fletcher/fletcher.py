@@ -326,17 +326,16 @@ def find_structural_motifs ( filename = "",
                                     if candidate['name'] == entry_entry['name']:
                                         if candidate['rotamer'] == entry_entry['rotamer'] or \
                                         'None' in (candidate['rotamer'], entry_entry['rotamer']):
-                                            if candidate not in hit[0]:
+                                            if all(candidate not in h for h in hit):
                                                 hit[i].append(candidate)
                                                 if all(len(slot) > 0 for slot in hit):
 
-                                                    hit_string = json.dumps(hit, sort_keys = True)
+                                                    hit_string = json.dumps(hit, sort_keys = False)
                                                     if hit_string not in list_of_hits:
                                                         list_of_hits.append(hit)
+                                                        print("hit\n", hit)
                                                         break 
                                                         
-    
-    print("list of hits", list_of_hits)
     print("number of hits", len(list_of_hits))
 
     result_dict = { }
