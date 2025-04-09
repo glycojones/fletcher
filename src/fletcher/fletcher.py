@@ -1,18 +1,33 @@
+###############################################################
+# importing packages & set-up
+###############################################################
+
 import os
-import gemmi
 import argparse
 import gzip
 import json
 import pickle
 import itertools
-import numpy as np
 from pathlib import Path
-from math import acos, atan2, degrees, exp
+from math import atan2, degrees, exp
+
+# Third-party dependencies (managed by pip)
+import gemmi
+import numpy as np
+
 
 DATA_DIR_PATH = os.path.join(os.path.dirname(__file__), 'data')
 LIBRARY_PATH = os.path.join(DATA_DIR_PATH, 'library.gz')
 library_data = None
 
+fletcher_description = '\nFletcher will try to find a list of residues within a fixed distance from the last atom in the first residue.'\
+                                '\nConcept: Federico Sabbadin & Jon Agirre, University of York, UK.'\
+                                '\nCode: Jon Agirre, with contributions from Rebecca Taylor, University of York, UK.'\
+                                '\n\nLatest source code: https://github.com/glycojones/fletcher\n'
+
+###############################################################
+# defining sub functions
+###############################################################
 
 CHI_ATOMS = [ { ('N', 'CA', 'CB', 'CG') : ('ARG', 'ASN', 'ASP', 'GLN', 'GLU', 'HIS', 'LEU', 'LYS',
                                            'MET', 'PHE', 'PRO', 'TRP', 'TYR', 'MSE'),
@@ -130,6 +145,7 @@ def load_rotamer_data():
         global library_data
         library_data = (dim_offsets, dim_bin_ranges, dim_bin_widths, dim_num_options, classifications)
 
+load_rotamer_data()
 
 def get_classification(code, chis):
     global library_data
@@ -152,9 +168,9 @@ def get_classification(code, chis):
     closest_values = tuple(closest_values)
     index = 0
     for dimension, chi in enumerate(closest_values):
-        dim_offest = dim_offsets[code][dimension]
+        dim_offset = dim_offsets[code][dimension]
         dim_bin_width = dim_bin_widths[code][dimension]
-        index += int((chi - dim_offest) / dim_bin_width * product(dim_num_options[code][dimension+1:]))
+        index += int((chi - dim_offset) / dim_bin_width * product(dim_num_options[code][dimension+1:]))
     return classifications[code][index]
 
 
@@ -167,130 +183,61 @@ def plddt_to_rmsd ( plddt = 0.0 ) :
 def plddt_to_bfact ( plddt = 0.0 ) :
   return min ( 999.99, 26.318945069571623 * (plddt_to_rmsd ( plddt ))**2)
 
+def convert_residue_info_list_to_dict_format(residue_info_list):
+    residue_info_list_of_dict = []
+    for group in residue_info_list:
+        subgroup = []
+        items = group.split('~')
+        for item in items:
+            parts = item.strip().split(':')
+            one_letter = parts[0].strip().upper()
+            rotamer = parts[1] if len(parts) > 1 else 'None'
+            three_letter = gemmi.expand_one_letter(one_letter, gemmi.ResidueKind.AA)
+            subgroup.append({'name': three_letter, 'rotamer': rotamer})
+        residue_info_list_of_dict.append(subgroup)
+    return residue_info_list_of_dict
 
 def create_script_file ( filename = "", list_of_hits = [ ] ) :
   with open ( filename.split('.')[0] + '.py', 'w' ) as file_out :
     file_out.write ( "# File programmatically created by Fletcher\n" )
     file_out.write ( 'handle_read_draw_molecule_with_recentre ("%s", 1)\n' % filename )
     file_out.write ( 'interesting_things_gui ("Results from Fletcher",[\n')
-    for hit in list_of_hits :
-      file_out.write ( '["%s %s", %.3f, %.3f, %.3f, ]' \
-                                % ( hit[0].get('name'), \
-                                    hit[0].get('seqid'), \
-                                    hit[0].get('coordinates')[0], \
-                                    hit[0].get('coordinates')[1], \
-                                    hit[0].get('coordinates')[2] ))
-      if hit is not list_of_hits[-1] :
-        file_out.write(',\n')
+    for hit in list_of_hits[0][0]:
+        file_out.write ( '["%s %s", %.3f, %.3f, %.3f, ]' \
+                                    % ( hit['name'], \
+                                        hit['seqid'], \
+                                        hit['coordinates'][0], \
+                                        hit['coordinates'][1], \
+                                        hit['coordinates'][2] ))
+        if hit != list_of_hits[-1] :
+            file_out.write(',\n')
     file_out.write ( '])\n')
     file_out.close ( )
 
-
-def find_structural_motifs ( filename = "",
-                             residue_lists = [ ],
-                             distance = 0.0,
-                             min_plddt = 70.0,
-                             n_term = False,
-                             c_term = False,
-                            ) :
-  load_rotamer_data()
-  af_model = gemmi.read_structure ( filename )
-  neighbour_search = gemmi.NeighborSearch ( af_model[0], af_model.cell, distance ).populate ( include_h=False )
-  first_residues = gemmi.Selection ( '(' + residue_lists[0][0] + ')' ) 
-  
-  result_dict = { }
-  result_list = [ ]
-
-  for model in first_residues.models(af_model):
-    for chain in first_residues.chains(model):
-      for residue in first_residues.residues(chain):
-        partial_result = [ residue ]
-        marks = neighbour_search.find_neighbors ( residue[-1], 0, distance )
-        for candidate_list in residue_lists[1:] :
-          for candidate in candidate_list :
-            found_in_contacts = False
-            for mark in marks :
-              cra = mark.to_cra ( af_model[0] )
-              
-              # We do the following conversion to harness gemmi's translation of modified residue codes
-              # into the unmodified ones, e.g. HIC (methylated histidine) >> HIS (normal histidine)
-              if gemmi.find_tabulated_residue(candidate).one_letter_code.upper() == \
-                 gemmi.find_tabulated_residue(cra.residue.name).one_letter_code.upper() \
-                 and cra.residue not in partial_result :
-                
-                partial_result.append ( cra.residue )
-                found_in_contacts = True
-                break
-            if found_in_contacts :
-              break
-          if len(residue_lists) == len(partial_result) :
-            if (n_term or c_term) :
-              in_terminus = False
-              for residue in partial_result :
-                if n_term and residue == chain[0] :
-                  in_terminus = True
-                elif c_term and residue.seqid.num == chain[-1].seqid.num :
-                  in_terminus = True
-              if in_terminus : result_list.append ( partial_result )
-            else :
-              result_list.append ( partial_result )
-            
-  if len ( result_list ) > 0 :
-    Path ( filename ).touch() # We want results at the top
-    result_dict['filename'] = filename
-    result_dict['residue_lists'] = str(residue_lists)
-    result_dict['distance'] = distance
-    result_dict['plddt'] = min_plddt
-    hit_list = [ ]
-
-    for result in result_list :
-      hit = [ ]
-      for residue in result :
-        residue_dict = { }
-        residue_dict['name']  = residue.name
-        residue_dict['seqid'] = str(residue.seqid)
-        residue_dict['rotamer'] = str(get_classification(residue.name, calculate_chis(residue)))
-        if residue[-1].b_iso < min_plddt :
-          residue_dict['plddt'] = 'LOW PLDDT: %.2f' % residue[-1].b_iso
-        else :
-          residue_dict['plddt'] = '%.2f' % residue[-1].b_iso
-        residue_dict ['coordinates'] = residue[-1].pos.tolist()
-        hit.append ( residue_dict )
-      hit_list.append ( hit )
-      print ( "Hit found:", hit )
-
-    result_dict['hits'] = hit_list
-
-    with open ( filename.split('.')[0] + '.json', 'w' ) as file_out :
-      json.dump ( result_dict, file_out, sort_keys=False, indent=4 )
-    
-    create_script_file ( filename, hit_list )
-  
-  else :
-    print ("\nNo results found :-( \n")
-  return result_dict
+###############################################################
+# argument parser
+###############################################################
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser ( 
                     prog='Fletcher',
-                    description='Fletcher will try to find a list of residues within a fixed distance from the centre of mass.'\
-                                '\nConcept: Federico Sabbadin & Jon Agirre, University of York, UK.',
-                    epilog='Please send bug reports to Jon Agirre: jon.agirre@york.ac.uk' )
+                    description=fletcher_description,
+                    epilog='' )
 
   parser.add_argument ( '-f', '--filename', \
                         help = "The name of the file to be processed, in PDB or mmCIF format.", \
                         required = True )                  
 
   parser.add_argument ( '-r', '--residues', \
-                        help = "A list of residues in one-letter code, comma separated, and including alternatives, e.g. L,A,FWY.", \
+                        help = "A list of residues in one-letter code, comma separated, including alternatives, e.g. H:1,H:2,F:1~W:3:2~Y", \
                         default = "GF", required = True )                       
 
   parser.add_argument ( '-d', '--distance', \
-                        help = "Specifies how far each of the residues can be from the rest, in Angstroems.", \
+                        help = "Specifies how far each of the residues can be from the rest, in Angstroms.", \
                         default = "0.0", required = True )  
 
   parser.add_argument ( '-p', '--plddt', \
-                        help = "Flag up candidate residues with average pLDDT below thresold (Jumper et al., 2020).", \
+                        help = "Flag up candidate residues with average pLDDT below threshold (Jumper et al., 2020).", \
                         default = "70.0", required = False )
   
   parser.add_argument ( '-n', '--nterm', \
@@ -304,34 +251,125 @@ if __name__ == '__main__':
                         default = 'no' )
 
   args = parser.parse_args ( )
-  
-  # Assuming argparse has got the right number of parameters beyond this point
 
-  print ( "\nFletcher is a tool that helps spot and document molecular features in AlphaFold models."\
-          "\nConcept: Federico Sabbaddin & Jon Agirre, University of York, UK."\
-          "\nLatest source code: https://github.com/glycojones/fletcher"\
-          "\nBug reports to jon.agirre@york.ac.uk\n\n" )
+###############################################################
+# interpretation of arguments 
+###############################################################
 
-  input_residues = args.residues.split(',')
-  list_of_residues = [ ]
+filename = args.filename
+residue_info_list = args.residues.split(',')
+distance = float ( args.distance )
+min_plddt = float ( args.plddt )
 
-  for slot in input_residues :
-    list_of_residues.append ( gemmi.expand_one_letter_sequence(slot, gemmi.ResidueKind.AA) )
+###############################################################
+# default print
+###############################################################
 
-  distance = float ( args.distance )
-  min_plddt = float ( args.plddt )
-  n_term = True if args.nterm == 'yes' else False
-  c_term = True if args.cterm == 'yes' else False
+print ( fletcher_description )
 
-  print ( "Running Fletcher with the following parameters:\nFilename: ", 
-          args.filename, "\nResidue list: ", 
-          list_of_residues, "\nDistance: ", 
-          distance, "\npLDDT: ",
-          min_plddt,
-          "\nN-term: ", n_term,
-          "\nC-term: ", c_term,
-          "\n" )
-  
-  if len ( list_of_residues ) > 1 and distance > 0.0 :
-    find_structural_motifs ( args.filename, list_of_residues, distance, min_plddt, n_term, c_term )
+print ( "Running Fletcher with the following parameters:\n"
+          "\nFilename: ", filename, 
+          "\nResidue list: ", residue_info_list, 
+          "\nDistance: ", distance, 
+          "\npLDDT: ", min_plddt,
+          "\n" 
+          )
 
+###############################################################
+# main function definition
+###############################################################
+
+def find_structural_motifs ( filename = "",
+                             residue_info_list = [],
+                             distance = 0.0,
+                             min_plddt = 70.0
+                             ) :
+    
+    af_model = gemmi.read_structure ( filename )
+
+    neighbour_search = gemmi.NeighborSearch ( af_model[0], af_model.cell, distance ).populate ( include_h=False )
+      
+    residue_info_list_of_dict = convert_residue_info_list_to_dict_format(residue_info_list)
+
+    first_residues = gemmi.Selection ( '(' + residue_info_list_of_dict[0][0]['name'] + ')' )
+
+    list_of_hits = []
+
+    for model in first_residues.models(af_model):
+        for chain in first_residues.chains(model):
+            for residue in first_residues.residues(chain):
+                first_residue_info = {
+                    'name': residue.name,
+                    'seqid': str(residue.seqid),
+                    'rotamer': str(get_classification(residue.name, calculate_chis(residue))),
+                    ########## all are coming out as 0.0 below
+                    'plddt': ('LOW PLDDT: %.2f' % residue[-1].b_iso) if residue[-1].b_iso < min_plddt else ('%.2f' % residue[-1].b_iso),
+                    'coordinates': residue[-1].pos.tolist()
+                }
+
+                if first_residue_info['rotamer'] == residue_info_list_of_dict[0][0]['rotamer'] or 'None' in (first_residue_info['rotamer'], residue_info_list_of_dict[0][0]['rotamer']):
+
+                    hit = [[] for _ in residue_info_list_of_dict]
+                    hit[0].append(first_residue_info)
+
+                    marks = neighbour_search.find_neighbors(residue[-1], 0, distance)
+
+                    for mark in marks:
+                        cra = mark.to_cra(af_model[0])
+
+                        candidate = {
+                            'name': cra.residue.name,
+                            'seqid': str(cra.residue.seqid.num),  
+                            'rotamer': str(get_classification(cra.residue.name, calculate_chis(cra.residue))),
+                            'plddt': ('LOW PLDDT: %.2f' % cra.residue[-1].b_iso) if cra.residue[-1].b_iso < min_plddt else ('%.2f' % cra.residue[-1].b_iso),
+                            'coordinates': cra.residue[-1].pos.tolist()
+                        }
+
+                        for i, entry in enumerate(residue_info_list_of_dict[1:], start=1):
+                            if not hit[i]: 
+                                for entry_entry in entry:
+                                    if candidate['name'] == entry_entry['name']:
+                                        if candidate['rotamer'] == entry_entry['rotamer'] or \
+                                        'None' in (candidate['rotamer'], entry_entry['rotamer']):
+                                            if all(candidate not in h for h in hit):
+                                                hit[i].append(candidate)
+                                                if all(len(slot) > 0 for slot in hit):
+
+                                                    hit_string = json.dumps(hit, sort_keys = False, indent=2)
+                                                    if hit_string not in list_of_hits:
+                                                        list_of_hits.append(hit)    
+                                                        break 
+
+    for idx, hit in enumerate(list_of_hits, start=1):
+        print(f"Hit {idx}:\n{json.dumps(hit, sort_keys = False, indent=2)}\n")                                                  
+    print("Number of hits:", len(list_of_hits), "\n")
+
+    result_dict = { }
+
+    if len ( list_of_hits ) > 0 :
+        Path ( filename ).touch() 
+        result_dict['filename'] = filename
+        result_dict['residue_lists'] = str(residue_info_list)
+        result_dict['distance'] = distance
+        result_dict['plddt'] = min_plddt
+        result_dict['number of hits'] = len(list_of_hits)
+        result_dict['hits'] = list_of_hits
+
+        with open (filename.split('.')[0] + '.json', 'w' ) as file_out:
+            json.dump (result_dict, file_out, sort_keys=False, indent=4)
+
+        create_script_file (filename, list_of_hits)
+
+    else :
+        print ("\nNo results found :-( \n")
+    return list_of_hits
+   
+###############################################################
+# running main function 
+###############################################################
+
+if len (residue_info_list) > 1 and distance > 0.0:
+    find_structural_motifs(filename, 
+                           residue_info_list,  
+                           distance, 
+                           min_plddt)
