@@ -3,19 +3,27 @@
 ###############################################################
 
 import os
-import gemmi
 import argparse
 import gzip
 import json
 import pickle
 import itertools
-import numpy as np
 from pathlib import Path
-from math import acos, atan2, degrees, exp
+from math import atan2, degrees, exp
+
+# Third-party dependencies (managed by pip)
+import gemmi
+import numpy as np
+
 
 DATA_DIR_PATH = os.path.join(os.path.dirname(__file__), 'data')
 LIBRARY_PATH = os.path.join(DATA_DIR_PATH, 'library.gz')
 library_data = None
+
+fletcher_description = '\nFletcher will try to find a list of residues within a fixed distance from the last atom in the first residue.'\
+                                '\nConcept: Federico Sabbadin & Jon Agirre, University of York, UK.'\
+                                '\nCode: Jon Agirre, with contributions from Rebecca Taylor, University of York, UK.'\
+                                '\n\nLatest source code: https://github.com/glycojones/fletcher\n'
 
 ###############################################################
 # defining sub functions
@@ -213,9 +221,8 @@ def create_script_file ( filename = "", list_of_hits = [ ] ) :
 if __name__ == '__main__':
   parser = argparse.ArgumentParser ( 
                     prog='Fletcher',
-                    description='Fletcher will try to find a list of residues within a fixed distance from the centre of mass.'\
-                                '\nConcept: Federico Sabbadin & Jon Agirre, University of York, UK.',
-                    epilog='Please send bug reports to Jon Agirre: jon.agirre@york.ac.uk' )
+                    description=fletcher_description,
+                    epilog='' )
 
   parser.add_argument ( '-f', '--filename', \
                         help = "The name of the file to be processed, in PDB or mmCIF format.", \
@@ -258,10 +265,7 @@ min_plddt = float ( args.plddt )
 # default print
 ###############################################################
 
-print ( "\nFletcher is a tool that helps spot and document molecular features in AlphaFold models."\
-        "\nConcept: Federico Sabbaddin & Jon Agirre, University of York, UK."\
-        "\nLatest source code: https://github.com/glycojones/fletcher"\
-        "\nBug reports to jon.agirre@york.ac.uk\n\n" )
+print ( fletcher_description )
 
 print ( "Running Fletcher with the following parameters:\n"
           "\nFilename: ", filename, 
@@ -331,15 +335,14 @@ def find_structural_motifs ( filename = "",
                                                 hit[i].append(candidate)
                                                 if all(len(slot) > 0 for slot in hit):
 
-                                                    hit_string = json.dumps(hit, sort_keys = False)
+                                                    hit_string = json.dumps(hit, sort_keys = False, indent=2)
                                                     if hit_string not in list_of_hits:
                                                         list_of_hits.append(hit)    
                                                         break 
 
-    print("list_of_hits:\n")
     for idx, hit in enumerate(list_of_hits, start=1):
-        print(f"Hit {idx}:\n{hit}\n")                                                  
-    print("number of hits", len(list_of_hits))
+        print(f"Hit {idx}:\n{json.dumps(hit, sort_keys = False, indent=2)}\n")                                                  
+    print("Number of hits:", len(list_of_hits), "\n")
 
     result_dict = { }
 
