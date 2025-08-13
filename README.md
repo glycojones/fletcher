@@ -1,7 +1,4 @@
-<div style="float: right; margin: 0 0 10px 10px;">
-    <img src="docs/ChatGPT_generated_Fletcher_Logo.png" alt="Fletcher logo" width="100">
-</div>
-
+<img src="docs/ChatGPT_generated_Fletcher_Logo.png" alt="Fletcher logo" width="100" align="right">
 
 # lddt_cli: Chemistry-Aware lDDT Scoring via Command-Line Interface
 
