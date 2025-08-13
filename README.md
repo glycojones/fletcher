@@ -1,4 +1,4 @@
-<img src="docs/ChatGPT_generated_Fletcher_Logo.png" alt="Fletcher logo" width="100" align="right">
+<img src="images/ChatGPT_generated_Fletcher_Logo.png" alt="Fletcher logo" width="100" align="right">
 
 # Chemistry-Aware lDDT Scoring via Command-Line Interface
 
@@ -50,3 +50,5 @@ For each query, the results will be saved in a JSON file named `<query_name>_ldd
 
 ## Background
 Fletcher is not an acronym. It is the surname of the greatest musical catalyst I know: Guy Fletcher (https://www.guyfletcher.co.uk). 
+
+<img src="images/Guy_Fletcher.jpg" alt="Guy Fletcher" width="300">
