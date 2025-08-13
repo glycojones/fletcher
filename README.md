@@ -1,37 +1,50 @@
-# Fletcher
+# lddt_cli: Chemistry-Aware lDDT Scoring via Command-Line Interface
 
-While sequence alignments have historically helped infer activity once homology is identified, this is usually limited by the ability of the MSA tool to spot similarities and align them correctly. With the advent of AlphaFold, structural similarities may be found based on sequence similarities that would have flown under the radar if using an MSA exclusively. 'Fletcher' is a tool that will get a list of residues (and alternatives) and look for them in AlphaFold models provided that they lie within a fixed distance, calculated from the last atom of the first residue in a list of candidate residues. 
+The lddt_cli module provides a command-line interface (CLI) for computing chemistry-aware lDDT-like scores between a reference protein structure and one or more query structures. This tool is particularly useful for evaluating structural alignments and predicting protein-ligand interactions.
 
-Usage: 
+## Installation
+Ensure you have the required dependencies:
 
-```
-fletcher.py [-h] -f FILENAME -r RESIDUES -d DISTANCE
+`pip install gemmi scipy matplotlib seaborn`
 
-Fletcher will try to find a list of residues within a fixed distance from the last atom in the first residue.
-Concept: Federico Sabbadin & Jon Agirre, University of York, UK.
-Code: Jon Agirre, with contributions from Rebecca Taylor, University of York, UK.
-Latest source code: https://github.com/glycojones/fletcher
+## Usage
+To run the CLI, use the following command:
 
-Required arguments:
+`python -m fletcher.lddt_cli --ref <path_to_reference_pdb> --queries <path_to_query_pdb> --target_chain <chain_id> --target_res <residue_id> [OPTIONS]`
 
-  -f FILENAME, --filename FILENAME
-                        The name of the file to be processed, in PDB or mmCIF
-                        format
-  -r RESIDUES, --residues RESIDUES
-                        A list of residues in one-letter code, comma
-                        separated. Alternatives separated by ~, rotamers separated by ':'
-                        e.g. H:3,H:3,W~F~Y:3 – two histidines in rotamer form 3, plus a
-                        tryptophan, phenylalanine (any rotamer) or tyrosine in rotamer 3.
-  -d DISTANCE, --distance DISTANCE
-                        Specifies how far each of the residues can be from the
-                        last atom (PDB order) in the first specified residue, in Angstroems
-  -p PLDDT, --plddt PLDDT
-                        Flag up candidate residues with average pLDDT below
-                        thresold (Jumper et al., 2020).
+### Arguments:
 
-Optional arguments:
+- `-ref`: Path to the reference PDB file.
+- `-queries`: Path to the query PDB file(s). Multiple files can be specified, separated by spaces.
+- `-target_chain`: Chain ID of the target residue in the reference structure.
+- `-target_res`: Residue ID of the target residue in the reference structure.
 
--h, --help            show this help message and exit
-```
+### Optional Flags:
 
+- `-distance_cutoff`: Maximum distance (in Å) for considering neighboring residues. Default is 15.0.
+- `-min_pairs_required`: Minimum number of residue pairs required for scoring. Default is 3.
+- `-lddt_thresholds`: List of thresholds (in Å) for calculating lDDT-like scores. Default is [0.5, 1.0, 2.0, 4.0].
+- `-save_results`: Flag to save results to JSON files. Default is True.
+- `-results_dir`: Directory to save result files. Default is 'results'.
+- `-plot`: Flag to generate and save histograms of scores. Default is True.
+
+## Example
+
+`python -m fletcher.lddt_cli --ref reference.pdb --queries query1.pdb query2.pdb --target_chain A --target_res 152 --distance_cutoff 15.0 --min_pairs_required 5 --lddt_thresholds 0.5 1.0 2.0 --save_results --results_dir ./results --plot`
+
+This command will compute the lDDT-like scores between the reference structure and the two query structures, considering only residues within 15 Å of the target residue 152 in chain A. The top 10 matching residues will be recorded in JSON files saved in the ./results directory, and histograms of the scores will be generated.
+
+## Output
+For each query, the results will be saved in a JSON file named `<query_name>_lddt_top_results.json` in the specified results directory. The JSON file will contain:
+
+- title: A string indicating the top results.
+- score_type: The type of scoring used.
+- thresholds: The thresholds used for scoring.
+- min_pairs_required: The minimum number of pairs required for scoring.
+- results: A list of the top 10 matching residues, each with:
+  - match_residue: The chain and residue ID of the matching residue.
+  - score: The computed lDDT-like score.
+  - n_pairs: The number of residue pairs considered.
+
+## Background
 Fletcher is not an acronym. It is the surname of the greatest musical catalyst I know: Guy Fletcher (https://www.guyfletcher.co.uk). 
