@@ -154,13 +154,19 @@ def compare_queries_to_reference(target_residue_name, ref_neighbours, query_pdb_
             print(f"▶ {os.path.basename(query_pdb_path)}: No valid matches found.")
 
         if save_results:
-            out_json_path = os.path.join(results_dir, f"{os.path.basename(query_pdb_path).split('.')[0]}_lddt_results.json")
+            top_results = sorted(results, key=lambda x: x['score'], reverse=True)[:10]
+
+            out_json_path = os.path.join(
+                results_dir, 
+                f"{os.path.splitext(os.path.basename(query_pdb_path))[0]}_lddt_top_results.json"
+                )
             with open(out_json_path, 'w') as f:
                 json.dump({
+                    "title": "Top 10 results",
                     "score_type": "lDDT-like (chemistry-aware)",
                     "thresholds": lddt_thresholds,
                     "min_pairs_required": min_pairs_required,
-                    "results": results
+                    "results": top_results
                 }, f, indent=4)
 
         if plot and results:
