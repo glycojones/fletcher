@@ -1,6 +1,11 @@
+<div style="float: right; margin: 0 0 10px 10px;">
+    <img src="docs/ChatGPT_generated_Fletcher_Logo.png" alt="Fletcher logo" width="100">
+</div>
+
+
 # lddt_cli: Chemistry-Aware lDDT Scoring via Command-Line Interface
 
-The lddt_cli module provides a command-line interface (CLI) for computing chemistry-aware lDDT-like scores between a reference protein structure and one or more query structures. This tool is particularly useful for evaluating structural alignments and predicting protein-ligand interactions.
+The `lddt_cli` module provides a command-line interface (CLI) for computing chemistry-aware lDDT-like scores between a reference protein structure and one or more query structures. This tool is particularly useful for evaluating structural alignments and predicting protein-ligand interactions.
 
 ## Installation
 Ensure you have the required dependencies:
