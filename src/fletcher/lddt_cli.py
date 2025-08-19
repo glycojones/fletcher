@@ -1,6 +1,6 @@
 import argparse
 import glob
-from fletcher import fletcher
+from fletcher.fletcher import get_reference_neighbours, compare_queries_to_reference
 
 def main():
     parser = argparse.ArgumentParser(description="Chemistry-aware lDDT-like scoring for PDB files")
@@ -20,14 +20,14 @@ def main():
     for pattern in args.queries:
         query_paths.extend(glob.glob(pattern))
 
-    target_residue_name, ref_neighbours = fletcher.get_reference_neighbours(
+    target_residue_name, ref_neighbours = get_reference_neighbours(
         args.ref, 
         args.target_chain,
         args.target_res,
         distance_cutoff=args.distance_cutoff
     )
 
-    fletcher.compare_queries_to_reference(
+    compare_queries_to_reference(
         target_residue_name, 
         ref_neighbours, 
         args.queries,
@@ -39,3 +39,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
