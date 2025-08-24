@@ -1,6 +1,7 @@
 import argparse
 import glob
-from fletcher.fletcher import get_reference_neighbours, compare_queries_to_reference
+
+from .fletcher import get_reference_neighbours, compare_queries_to_reference
 
 def main():
     parser = argparse.ArgumentParser(description="Chemistry-aware lDDT-like scoring for PDB files")

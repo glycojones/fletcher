@@ -17,6 +17,11 @@ chemical_groups = {
     "special": {"GLY"}
 }
 
+# ------------------- Modifications -------------------
+# Add common post-translational modifications if needed
+
+# ----------------- lDDT-like scoring -----------------
+
 def chemical_similarity(res1, res2):
     if res1 == res2:
         return 0.0
@@ -69,8 +74,20 @@ def compute_lddt_like(ref_neighbours, query_neighbours,
 
     return score, n_pairs
 
-def get_reference_neighbours(ref_pdb_path, target_chain_id, target_res_id, distance_cutoff=15.0):
-    ref_structure = gemmi.read_structure(ref_pdb_path)
+# ----------------- Main functions -----------------
+
+def get_reference_neighbours(ref_file_path, target_chain_id, target_res_id, distance_cutoff=15.0):
+    # if ref_file_path.endswith('.cif'):
+    #     ref_file = gemmi.cif.read_file(ref_file_path)
+    #     ref_file_path_pdb = ref_file_path.replace('.cif', '.pdb')
+    #     ref_structure = gemmi.make_structure_from_block(ref_file[0])
+    #     print("Converted CIF to PDB format for processing.")
+    #     ref_structure.write_minimal_pdb(ref_file_path_pdb)
+    #     print(f"Temporary PDB file created at {ref_file_path_pdb}")
+    if ref_file_path.endswith('.pdb'):
+        ref_structure = gemmi.read_structure(ref_file_path)
+    else: 
+        raise ValueError("Unsupported file format. Use PDB files.")
     ref_search = gemmi.NeighborSearch(ref_structure[0], ref_structure.cell, distance_cutoff).populate(include_h=False)
 
     target_residue_name = None
@@ -98,15 +115,25 @@ def get_reference_neighbours(ref_pdb_path, target_chain_id, target_res_id, dista
 
     return target_residue_name, ref_neighbours
 
-def compare_queries_to_reference(target_residue_name, ref_neighbours, query_pdb_paths,
+def compare_queries_to_reference(target_residue_name, ref_neighbours, query_file_paths,
                                   distance_cutoff=15.0, min_pairs_required=3,
                                   lddt_thresholds=[0.5, 1.0, 2.0, 4.0],
                                   save_results=True, results_dir='results', plot=True):
 
     os.makedirs(results_dir, exist_ok=True)
 
-    for query_pdb_path in query_pdb_paths:
-        query_structure = gemmi.read_structure(query_pdb_path)
+    for query_file_path in query_file_paths:
+        # if query_file_path.endswith('.cif'):
+        #     query_file = gemmi.cif.read_file(query_file_path)
+        #     query_file_path_pdb = query_file_path.replace('.cif', '.pdb')
+        #     query_structure = gemmi.make_structure_from_block(query_file[0])
+        #     print("Converted CIF to PDB format for processing.")
+        #     query_structure.write_minimal_pdb(query_file_path_pdb)
+        #     print(f"Temporary PDB file created at {query_file_path_pdb}") 
+        if query_file_path.endswith('.pdb'):
+            query_structure = gemmi.read_structure(query_file_path)
+        else:
+            raise ValueError("Unsupported file format. Use PDB files.")
         query_search = gemmi.NeighborSearch(query_structure[0], query_structure.cell, distance_cutoff).populate(include_h=False)
 
         query_candidates = []
@@ -148,17 +175,18 @@ def compare_queries_to_reference(target_residue_name, ref_neighbours, query_pdb_
 
         if results:
             best = max(results, key=lambda x: x['score'])
-            print(f"▶ {os.path.basename(query_pdb_path)}: Best match at chain {best['match_residue']['chain']} "
+            print(f"▶ {os.path.basename(query_file_path)}: Best match at chain {best['match_residue']['chain']} "
                   f"residue {best['match_residue']['res_id']}, score={best['score']:.4f}, pairs={best['n_pairs']}")
+
         else:
-            print(f"▶ {os.path.basename(query_pdb_path)}: No valid matches found.")
+            print(f"▶ {os.path.basename(query_file_path)}: No valid matches found.")
 
         if save_results:
             top_results = sorted(results, key=lambda x: x['score'], reverse=True)[:10]
 
             out_json_path = os.path.join(
                 results_dir, 
-                f"{os.path.splitext(os.path.basename(query_pdb_path))[0]}_lddt_top_results.json"
+                f"{os.path.splitext(os.path.basename(query_file_path))[0]}_lddt_top_results.json"
                 )
             with open(out_json_path, 'w') as f:
                 json.dump({
@@ -172,10 +200,10 @@ def compare_queries_to_reference(target_residue_name, ref_neighbours, query_pdb_
         if plot and results:
             scores = [r['score'] for r in results]
             sns.histplot(scores, kde=True, bins=10, color='blue')
-            plt.title(f"lDDT-like (chemistry-aware) scores\nQuery: {os.path.basename(query_pdb_path)}")
+            plt.title(f"lDDT-like (chemistry-aware) scores\nQuery: {os.path.basename(query_file_path)}")
             plt.xlabel("lDDT-like score (0–1)")
             plt.ylabel("Frequency")
             plt.tight_layout()
-            out_png_path = os.path.join(results_dir, f"{os.path.basename(query_pdb_path).split('.')[0]}_score_hist.png")
+            out_png_path = os.path.join(results_dir, f"{os.path.basename(query_file_path).split('.')[0]}_score_hist.png")
             plt.savefig(out_png_path, dpi=300, bbox_inches='tight')
             plt.close()
