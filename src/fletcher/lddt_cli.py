@@ -1,7 +1,15 @@
 import argparse
 import glob
 
-from .fletcher import get_reference_neighbours, compare_queries_to_reference
+import os
+import sys
+
+# Get the absolute path to the parent of this file (the "src" directory)
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
+from fletcher.fletcher import get_reference_neighbours, compare_queries_to_reference
 
 def main():
     parser = argparse.ArgumentParser(description="Chemistry-aware lDDT-like scoring for PDB files")
