@@ -115,95 +115,99 @@ def get_reference_neighbours(ref_file_path, target_chain_id, target_res_id, dist
 
     return target_residue_name, ref_neighbours
 
-def compare_queries_to_reference(target_residue_name, ref_neighbours, query_file_paths,
+def compare_query_to_reference(target_residue_name, ref_neighbours, query_file_path,
                                   distance_cutoff=15.0, min_pairs_required=3,
                                   lddt_thresholds=[0.5, 1.0, 2.0, 4.0],
                                   save_results=True, results_dir='results', plot=True):
 
     os.makedirs(results_dir, exist_ok=True)
 
-    for query_file_path in query_file_paths:
-        # if query_file_path.endswith('.cif'):
-        #     query_file = gemmi.cif.read_file(query_file_path)
-        #     query_file_path_pdb = query_file_path.replace('.cif', '.pdb')
-        #     query_structure = gemmi.make_structure_from_block(query_file[0])
-        #     print("Converted CIF to PDB format for processing.")
-        #     query_structure.write_minimal_pdb(query_file_path_pdb)
-        #     print(f"Temporary PDB file created at {query_file_path_pdb}") 
-        if query_file_path.endswith('.pdb'):
-            query_structure = gemmi.read_structure(query_file_path)
-        else:
-            raise ValueError("Unsupported file format. Use PDB files.")
-        query_search = gemmi.NeighborSearch(query_structure[0], query_structure.cell, distance_cutoff).populate(include_h=False)
+# -- if query_file_path.endswith('.cif'):
 
-        query_candidates = []
-        for chain in query_structure[0]:
-            for residue in chain:
-                if residue.name != target_residue_name:
-                    continue
-                ca_atom = next((atom for atom in residue if atom.name == 'CA'), None)
-                if ca_atom:
-                    marks = query_search.find_neighbors(ca_atom, 0, distance_cutoff)
-                    neighbours = []
-                    for mark in marks:
-                        cra = mark.to_cra(query_structure[0])
-                        if cra.atom.name == 'CA':
-                            pos = cra.atom.pos
-                            neighbours.append({
-                                'identity': cra.residue.name,
-                                'coordinates': (pos.x, pos.y, pos.z)
-                            })
-                    query_candidates.append({
-                        'match_residue': {
-                            'chain': chain.name,
-                            'res_id': residue.seqid.num
-                        },
-                        'neighbours': neighbours
-                    })
+    # if query_file_path.endswith('.cif'):
+    #     query_file = gemmi.cif.read_file(query_file_path)
+    #     query_file_path_pdb = query_file_path.replace('.cif', '.pdb')
+    #     query_structure = gemmi.make_structure_from_block(query_file[0])
+    #     print("Converted CIF to PDB format for processing.")
+    #     query_structure.write_minimal_pdb(query_file_path_pdb)
+    #     print(f"Temporary PDB file created at {query_file_path_pdb}") 
 
-        results = []
-        for candidate in query_candidates:
-            score, n_pairs = compute_lddt_like(ref_neighbours, candidate['neighbours'],
-                                               thresholds=lddt_thresholds,
-                                               min_pairs_required=min_pairs_required)
-            if score is not None:
-                results.append({
-                    'match_residue': candidate['match_residue'],
-                    'score': score,
-                    'n_pairs': n_pairs
+# -- elif query_file_path.endswith('.pdb'):
+
+    if query_file_path.endswith('.pdb'):
+        query_structure = gemmi.read_structure(query_file_path)
+    else:
+        raise ValueError("Unsupported file format. Use PDB files.")
+    query_search = gemmi.NeighborSearch(query_structure[0], query_structure.cell, distance_cutoff).populate(include_h=False)
+
+    query_candidates = []
+    for chain in query_structure[0]:
+        for residue in chain:
+            if residue.name != target_residue_name:
+                continue
+            ca_atom = next((atom for atom in residue if atom.name == 'CA'), None)
+            if ca_atom:
+                marks = query_search.find_neighbors(ca_atom, 0, distance_cutoff)
+                neighbours = []
+                for mark in marks:
+                    cra = mark.to_cra(query_structure[0])
+                    if cra.atom.name == 'CA':
+                        pos = cra.atom.pos
+                        neighbours.append({
+                            'identity': cra.residue.name,
+                            'coordinates': (pos.x, pos.y, pos.z)
+                        })
+                query_candidates.append({
+                    'match_residue': {
+                        'chain': chain.name,
+                        'res_id': residue.seqid.num
+                    },
+                    'neighbours': neighbours
                 })
 
-        if results:
-            best = max(results, key=lambda x: x['score'])
-            print(f"▶ {os.path.basename(query_file_path)}: Best match at chain {best['match_residue']['chain']} "
-                  f"residue {best['match_residue']['res_id']}, score={best['score']:.4f}, pairs={best['n_pairs']}")
+    results = []
+    for candidate in query_candidates:
+        score, n_pairs = compute_lddt_like(ref_neighbours, candidate['neighbours'],
+                                            thresholds=lddt_thresholds,
+                                            min_pairs_required=min_pairs_required)
+        if score is not None:
+            results.append({
+                'match_residue': candidate['match_residue'],
+                'score': score,
+                'n_pairs': n_pairs
+            })
 
-        else:
-            print(f"▶ {os.path.basename(query_file_path)}: No valid matches found.")
+    if results:
+        best = max(results, key=lambda x: x['score'])
+        print(f"▶ {os.path.basename(query_file_path)}: Best match at chain {best['match_residue']['chain']} "
+                f"residue {best['match_residue']['res_id']}, score={best['score']:.4f}, pairs={best['n_pairs']}")
 
-        if save_results:
-            top_results = sorted(results, key=lambda x: x['score'], reverse=True)[:10]
+    else:
+        print(f"▶ {os.path.basename(query_file_path)}: No valid matches found.")
 
-            out_json_path = os.path.join(
-                results_dir, 
-                f"{os.path.splitext(os.path.basename(query_file_path))[0]}_lddt_top_results.json"
-                )
-            with open(out_json_path, 'w') as f:
-                json.dump({
-                    "title": "Top 10 results",
-                    "score_type": "lDDT-like (chemistry-aware)",
-                    "thresholds": lddt_thresholds,
-                    "min_pairs_required": min_pairs_required,
-                    "results": top_results
-                }, f, indent=4)
+    if save_results:
+        top_results = sorted(results, key=lambda x: x['score'], reverse=True)[:10]
 
-        if plot and results:
-            scores = [r['score'] for r in results]
-            sns.histplot(scores, kde=True, bins=10, color='blue')
-            plt.title(f"lDDT-like (chemistry-aware) scores\nQuery: {os.path.basename(query_file_path)}")
-            plt.xlabel("lDDT-like score (0–1)")
-            plt.ylabel("Frequency")
-            plt.tight_layout()
-            out_png_path = os.path.join(results_dir, f"{os.path.basename(query_file_path).split('.')[0]}_score_hist.png")
-            plt.savefig(out_png_path, dpi=300, bbox_inches='tight')
-            plt.close()
+        out_json_path = os.path.join(
+            results_dir, 
+            f"{os.path.splitext(os.path.basename(query_file_path))[0]}_lddt_top_results.json"
+            )
+        with open(out_json_path, 'w') as f:
+            json.dump({
+                "title": "Top 10 results",
+                "score_type": "lDDT-like (chemistry-aware)",
+                "thresholds": lddt_thresholds,
+                "min_pairs_required": min_pairs_required,
+                "results": top_results
+            }, f, indent=4)
+
+    if plot and results:
+        scores = [r['score'] for r in results]
+        sns.histplot(scores, kde=True, bins=10, color='blue')
+        plt.title(f"lDDT-like (chemistry-aware) scores\nQuery: {os.path.basename(query_file_path)}")
+        plt.xlabel("lDDT-like score (0–1)")
+        plt.ylabel("Frequency")
+        plt.tight_layout()
+        out_png_path = os.path.join(results_dir, f"{os.path.basename(query_file_path).split('.')[0]}_score_hist.png")
+        plt.savefig(out_png_path, dpi=300, bbox_inches='tight')
+        plt.close()
