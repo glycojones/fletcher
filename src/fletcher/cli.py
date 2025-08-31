@@ -1,5 +1,4 @@
 import argparse
-import glob
 
 import os
 import sys
@@ -53,11 +52,6 @@ def main():
                         help="Distance thresholds for lDDT scoring (default: 0.5 1.0 2.0 4.0)")
 
     args = parser.parse_args()
-
-    # # Expand glob patterns
-    # query_paths = []
-    # for pattern in args.queries:
-    #     query_paths.extend(glob.glob(pattern))
 
     target_residue_name, ref_neighbours = get_reference_neighbours(
         args.ref, 
