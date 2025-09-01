@@ -16,19 +16,19 @@ To run the CLI, use the following command:
 
 ### Arguments:
 
-- `-ref`: Path to the reference PDB file.
-- `-queries`: Path to the query PDB file or directory of PDB files. 
-- `-target_chain`: Chain ID of the target residue in the reference structure.
-- `-target_res`: Residue ID of the target residue in the reference structure.
+- `--ref`: Path to the reference PDB file.
+- `--query`: Path to the query PDB file or directory of PDB files. 
+- `--target_chain`: Chain ID of the target residue in the reference structure.
+- `--target_res`: Residue ID of the target residue in the reference structure.
 
 ### Optional Flags:
 
-- `-distance_cutoff`: Maximum distance (in Å) for considering neighboring residues. Default is 15.0.
-- `-min_pairs_required`: Minimum number of residue pairs required for scoring. Default is 3.
-- `-lddt_thresholds`: List of thresholds (in Å) for calculating lDDT-like scores. Default is [0.5, 1.0, 2.0, 4.0].
-- `-save_results`: Flag to save results to JSON files. Default is True.
-- `-results_dir`: Directory to save result files. Default is 'results'.
-- `-plot`: Flag to generate and save histograms of scores. Default is True.
+- `--distance_cutoff`: Maximum distance (in Å) for considering neighboring residues. Default is 15.0.
+- `--min_pairs_required`: Minimum number of residue pairs required for scoring. Default is 3.
+- `--lddt_thresholds`: List of thresholds (in Å) for calculating lDDT-like scores. Default is [0.5, 1.0, 2.0, 4.0].
+- `--save_results`: Flag to save results to JSON files. Default is True.
+- `--results_dir`: Directory to save result files. Default is 'results'.
+- `--plot`: Flag to generate and save histograms of scores. Default is True.
 
 ## Example
 
