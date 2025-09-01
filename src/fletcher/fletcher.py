@@ -236,3 +236,40 @@ def compare_query_to_reference(target_residue_name, ref_neighbours, query_path,
     # skipped = [r['file'] for r in all_file_results if r['score'] is None]
     # for s in skipped:
     #     print(f"▶ {s}: No valid matches found.")
+
+
+    # Save top 10 results to JSON
+    if save_results and top_10_results:
+        top10_json_path = os.path.join(results_dir, "top_10_file_results.json")
+        with open(top10_json_path, 'w') as f:
+            json.dump({
+                "title": "Top 10 best scoring query files",
+                "score_type": "lDDT-like (chemistry-aware)",
+                "thresholds": lddt_thresholds,
+                "min_pairs_required": min_pairs_required,
+                "results": top_10_results
+            }, f, indent=4)
+
+    # Histogram of all scores
+    if plot and valid_results:
+        all_scores = [r['score'] for r in valid_results]
+        plt.figure(figsize=(6, 4))
+        sns.histplot(all_scores, kde=True, bins=10, color='green')
+        plt.title("Distribution of lDDT-like Scores (Best per File)")
+        plt.xlabel("lDDT-like Score")
+        plt.ylabel("Frequency")
+        plt.tight_layout()
+        plt.savefig(os.path.join(results_dir, "all_files_score_histogram.png"), dpi=300)
+        plt.close()
+
+    # Histogram of all n_pairs
+    if plot and valid_results:
+        all_pairs = [r['n_pairs'] for r in valid_results]
+        plt.figure(figsize=(6, 4))
+        sns.histplot(all_pairs, kde=False, bins=10, color='purple')
+        plt.title("Distribution of Number of Pairs (Best per File)")
+        plt.xlabel("Number of Pairs")
+        plt.ylabel("Frequency")
+        plt.tight_layout()
+        plt.savefig(os.path.join(results_dir, "all_files_pairs_histogram.png"), dpi=300)
+        plt.close()
