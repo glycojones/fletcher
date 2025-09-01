@@ -23,8 +23,14 @@ maintainers = [
 ]
 dependencies = [
     "gemmi>=0.6.6",
-    "numpy>=1.19.5"
+    "numpy>=1.19.5",
+    "matplotlib",
+    "seaborn",
+    "scipy"
 ]
+
+[project.scripts]
+fletcher = "fletcher.cli:main"
 
 [tool.setuptools]
 include-package-data = true
