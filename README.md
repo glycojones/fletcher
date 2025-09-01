@@ -2,7 +2,7 @@
 
 # Chemistry-Aware lDDT Scoring via Command-Line Interface
 
-The `lddt_cli` module provides a command-line interface (CLI) for computing chemistry-aware lDDT-like scores between a reference protein structure and one or more query structures. This tool is particularly useful for evaluating structural alignments and predicting protein-ligand interactions.
+The `lddt_cli` module provides a command-line interface (CLI) for computing chemistry-aware lDDT-like scores between a reference protein structure and one or more query structures. 
 
 ## Installation
 Ensure you have the required dependencies:
@@ -12,12 +12,12 @@ Ensure you have the required dependencies:
 ## Usage
 To run the CLI, use the following command:
 
-`python -m fletcher.lddt_cli --ref <path_to_reference_pdb> --queries <path_to_query_pdb> --target_chain <chain_id> --target_res <residue_id> [OPTIONS]`
+`python -m fletcher.lddt_cli --ref <path_to_reference_pdb> --query <path_to_query_pdb or path_to_query_directory> --target_chain <chain_id> --target_res <residue_id> [OPTIONS]`
 
 ### Arguments:
 
 - `-ref`: Path to the reference PDB file.
-- `-queries`: Path to the query PDB file(s). Multiple files can be specified, separated by spaces.
+- `-queries`: Path to the query PDB file or directory of PDB files. 
 - `-target_chain`: Chain ID of the target residue in the reference structure.
 - `-target_res`: Residue ID of the target residue in the reference structure.
 
@@ -32,9 +32,9 @@ To run the CLI, use the following command:
 
 ## Example
 
-`python -m fletcher.lddt_cli --ref reference.pdb --queries query1.pdb query2.pdb --target_chain A --target_res 152 --distance_cutoff 15.0 --min_pairs_required 5 --lddt_thresholds 0.5 1.0 2.0 --save_results --results_dir ./results --plot`
+`python -m fletcher.lddt_cli --ref reference.pdb --query query1.pdb --target_chain A --target_res 152 --distance_cutoff 15.0 --min_pairs_required 5 --lddt_thresholds 0.5 1.0 2.0 --save_results --results_dir ./results --plot`
 
-This command will compute the lDDT-like scores between the reference structure and the two query structures, considering only residues within 15 Å of the target residue 152 in chain A. The top 10 matching residues will be recorded in JSON files saved in the ./results directory, and histograms of the scores will be generated.
+This command will compute the lDDT-like scores between the reference structure and the query structure, considering only residues within 15 Å of the target residue 152 in chain A. The top 10 matching residues will be recorded in JSON files saved in the ./results directory, and histograms of the scores will be generated.
 
 ## Output
 For each query, the results will be saved in a JSON file named `<query_name>_lddt_top_results.json` in the specified results directory. The JSON file will contain:
