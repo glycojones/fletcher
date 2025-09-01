@@ -128,6 +128,8 @@ def compare_query_to_reference(target_residue_name, ref_neighbours, query_path,
     else: 
         raise ValueError("query_path must be a directory or a PDB file.")
     
+    all_file_results = []
+    
     for file_path in query_files:
         try:
             query_structure = gemmi.read_structure(file_path)
@@ -160,6 +162,7 @@ def compare_query_to_reference(target_residue_name, ref_neighbours, query_path,
         
         except Exception as e:
             print(f"❌ Error processing {file_path}: {e}")
+            continue # skip to next file
 
         results = []
         for candidate in query_candidates:
@@ -174,12 +177,25 @@ def compare_query_to_reference(target_residue_name, ref_neighbours, query_path,
                 })
 
         if results:
+            # best = max(results, key=lambda x: x['score'])
+            # print(f"▶ {os.path.basename(file_path)}: Best match at chain {best['match_residue']['chain']} "
+            #         f"residue {best['match_residue']['res_id']}, score={best['score']:.4f}, pairs={best['n_pairs']}")
             best = max(results, key=lambda x: x['score'])
-            print(f"▶ {os.path.basename(file_path)}: Best match at chain {best['match_residue']['chain']} "
-                    f"residue {best['match_residue']['res_id']}, score={best['score']:.4f}, pairs={best['n_pairs']}")
+            all_file_results.append({
+                'file': os.path.basename(file_path),
+                'match_residue': best['match_residue'],
+                'score': best['score'],
+                'n_pairs': best['n_pairs']
+            })
 
         else:
-            print(f"▶ {os.path.basename(file_path)}: No valid matches found.")
+            # print(f"▶ {os.path.basename(file_path)}: No valid matches found.")
+            all_file_results.append({
+                'file': os.path.basename(file_path),
+                'match_residue': None,
+                'score': None,
+                'n_pairs': 0
+            })
 
         if save_results and results:
             top_results = sorted(results, key=lambda x: x['score'], reverse=True)[:10]
@@ -208,3 +224,15 @@ def compare_query_to_reference(target_residue_name, ref_neighbours, query_path,
             plt.savefig(out_png_path, dpi=300, bbox_inches='tight')
             plt.close()
 
+    valid_results = [r for r in all_file_results if r['score'] is not None]
+    top_10_results = sorted(valid_results, key=lambda x: x['score'], reverse=True)[:10]
+
+    print("\nTop 10 query files:")
+    for r in top_10_results:
+        print(f"▶ {r['file']}: Best match at chain {r['match_residue']['chain']} "
+              f"residue {r['match_residue']['res_id']}, score={r['score']:.4f}, pairs={r['n_pairs']}")
+
+    # # Optionally: print files that had no valid matches
+    # skipped = [r['file'] for r in all_file_results if r['score'] is None]
+    # for s in skipped:
+    #     print(f"▶ {s}: No valid matches found.")
