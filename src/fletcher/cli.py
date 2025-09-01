@@ -8,7 +8,7 @@ repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 
-from fletcher import get_reference_neighbours, compare_query_to_reference
+from .fletcher import get_reference_neighbours, compare_query_to_reference
 
 def main():
     parser = argparse.ArgumentParser(

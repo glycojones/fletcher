@@ -45,4 +45,3 @@ Issues = "https://github.com/glycojones/fletcher/issues"
 [tool.pytest.ini_options]
 markers = [
 ]
-
