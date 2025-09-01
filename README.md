@@ -2,7 +2,7 @@
 
 # Chemistry-Aware lDDT Scoring via Command-Line Interface
 
-The `lddt_cli` module provides a command-line interface (CLI) for computing chemistry-aware lDDT-like scores between a reference protein structure and one or more query structures. 
+The `cli` module provides a command-line interface (CLI) for computing chemistry-aware lDDT-like scores between a reference protein structure and one or more query structures. 
 
 ## Installation
 Ensure you have the required dependencies:
