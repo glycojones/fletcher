@@ -1,1 +1,1 @@
-from .fletcher import get_reference_neighbours, compare_queries_to_reference
+from .fletcher import get_reference_neighbours, compare_query_to_reference

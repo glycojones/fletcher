@@ -30,7 +30,7 @@ dependencies = [
 ]
 
 [project.scripts]
-fletcher = "fletcher.lddt_cli:main"
+fletcher = "fletcher.cli:main"
 
 [tool.setuptools]
 include-package-data = true
@@ -46,5 +46,3 @@ Issues = "https://github.com/glycojones/fletcher/issues"
 markers = [
 ]
 
-[project.scripts]
-fletcher = "fletcher.cli:main"
