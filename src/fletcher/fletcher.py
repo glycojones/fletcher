@@ -5,6 +5,7 @@ import gemmi
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from scipy.optimize import linear_sum_assignment
 
 # ----------------- Chemistry groups -----------------
@@ -110,15 +111,93 @@ def get_reference_neighbours(ref_file_path, target_chain_id, target_res_id, dist
 
     return target_residue_name, ref_neighbours
 
-def compare_query_to_reference(target_residue_name, ref_neighbours, query_path,
-                                  distance_cutoff=15.0, min_pairs_required=3,
-                                  lddt_thresholds=[0.5, 1.0, 2.0, 4.0],
-                                  save_results=True, results_dir='results', plot=True):
+def process_single_file(file_path, target_residue_name, ref_neighbours,
+                        distance_cutoff, lddt_thresholds, min_pairs_required):
+    try:
+        query_structure = gemmi.read_structure(file_path)
+        query_search = gemmi.NeighborSearch(query_structure[0], query_structure.cell, distance_cutoff).populate(include_h=False)
+
+        query_candidates = []
+        for chain in query_structure[0]:
+            for residue in chain:
+                if residue.name != target_residue_name:
+                    continue
+                ca_atom = next((atom for atom in residue if atom.name == 'CA'), None)
+                if ca_atom:
+                    marks = query_search.find_neighbors(ca_atom, 0, distance_cutoff)
+                    neighbours = []
+                    for mark in marks:
+                        cra = mark.to_cra(query_structure[0])
+                        if cra.atom.name == 'CA':
+                            pos = cra.atom.pos
+                            neighbours.append({
+                                'identity': cra.residue.name,
+                                'coordinates': (pos.x, pos.y, pos.z)
+                            })
+                    query_candidates.append({
+                        'match_residue': {
+                            'chain': chain.name,
+                            'res_id': residue.seqid.num
+                        },
+                        'neighbours': neighbours
+                    })
+
+        results = []
+        for candidate in query_candidates:
+            score, n_pairs = compute_lddt_like(ref_neighbours, candidate['neighbours'],
+                                               thresholds=lddt_thresholds,
+                                               min_pairs_required=min_pairs_required)
+            if score is not None:
+                results.append({
+                    'match_residue': candidate['match_residue'],
+                    'score': score,
+                    'n_pairs': n_pairs
+                })
+
+        if results:
+            best = max(results, key=lambda x: x['score'])
+            return {
+                'file': os.path.basename(file_path),
+                'match_residue': best['match_residue'],
+                'score': best['score'],
+                'n_pairs': best['n_pairs'],
+                'all_results': results
+            }
+        else:
+            return {
+                'file': os.path.basename(file_path),
+                'match_residue': None,
+                'score': None,
+                'n_pairs': 0,
+                'all_results': []
+            }
+
+    except Exception as e:
+        print(f"❌ Error processing {file_path}: {e}")
+        return {
+            'file': os.path.basename(file_path),
+            'match_residue': None,
+            'score': None,
+            'n_pairs': 0,
+            'error': str(e),
+            'all_results': []
+        }
+
+def compare_query_to_reference(
+        target_residue_name, 
+        ref_neighbours, 
+        query_path,
+        distance_cutoff=15.0, 
+        min_pairs_required=3,
+        lddt_thresholds=[0.5, 1.0, 2.0, 4.0],
+        save_results=True, 
+        results_dir='results', 
+        plot=True
+        ):
 
     os.makedirs(results_dir, exist_ok=True)
 
     if os.path.isdir(query_path):
-        # makes a list of all pdb files in the directory
         query_files = [os.path.join(query_path, f) for f in os.listdir(query_path)
                        if f.endswith('.pdb')]
     elif os.path.isfile(query_path):
@@ -129,81 +208,33 @@ def compare_query_to_reference(target_residue_name, ref_neighbours, query_path,
         raise ValueError("query_path must be a directory or a PDB file.")
     
     all_file_results = []
-    
-    for file_path in query_files:
-        try:
-            query_structure = gemmi.read_structure(file_path)
-            query_search = gemmi.NeighborSearch(query_structure[0], query_structure.cell, distance_cutoff).populate(include_h=False)
 
-            query_candidates = []
-            for chain in query_structure[0]:
-                for residue in chain:
-                    if residue.name != target_residue_name:
-                        continue
-                    ca_atom = next((atom for atom in residue if atom.name == 'CA'), None)
-                    if ca_atom:
-                        marks = query_search.find_neighbors(ca_atom, 0, distance_cutoff)
-                        neighbours = []
-                        for mark in marks:
-                            cra = mark.to_cra(query_structure[0])
-                            if cra.atom.name == 'CA':
-                                pos = cra.atom.pos
-                                neighbours.append({
-                                    'identity': cra.residue.name,
-                                    'coordinates': (pos.x, pos.y, pos.z)
-                                })
-                        query_candidates.append({
-                            'match_residue': {
-                                'chain': chain.name,
-                                'res_id': residue.seqid.num
-                            },
-                            'neighbours': neighbours
-                        })
-        
-        except Exception as e:
-            print(f"❌ Error processing {file_path}: {e}")
-            continue # skip to next file
+    # Parallel processing of files
+    with ProcessPoolExecutor() as executor:
+        futures = [
+            executor.submit(
+                process_single_file,
+                file_path,
+                target_residue_name,
+                ref_neighbours,
+                distance_cutoff,
+                lddt_thresholds,
+                min_pairs_required
+            ) for file_path in query_files
+        ]
 
-        results = []
-        for candidate in query_candidates:
-            score, n_pairs = compute_lddt_like(ref_neighbours, candidate['neighbours'],
-                                                thresholds=lddt_thresholds,
-                                                min_pairs_required=min_pairs_required)
-            if score is not None:
-                results.append({
-                    'match_residue': candidate['match_residue'],
-                    'score': score,
-                    'n_pairs': n_pairs
-                })
+        for future in as_completed(futures):
+            result = future.result()
+            all_file_results.append(result)
 
-        if results:
-            # best = max(results, key=lambda x: x['score'])
-            # print(f"▶ {os.path.basename(file_path)}: Best match at chain {best['match_residue']['chain']} "
-            #         f"residue {best['match_residue']['res_id']}, score={best['score']:.4f}, pairs={best['n_pairs']}")
-            best = max(results, key=lambda x: x['score'])
-            all_file_results.append({
-                'file': os.path.basename(file_path),
-                'match_residue': best['match_residue'],
-                'score': best['score'],
-                'n_pairs': best['n_pairs']
-            })
-
-        else:
-            # print(f"▶ {os.path.basename(file_path)}: No valid matches found.")
-            all_file_results.append({
-                'file': os.path.basename(file_path),
-                'match_residue': None,
-                'score': None,
-                'n_pairs': 0
-            })
-
-        if save_results and results:
-            top_results = sorted(results, key=lambda x: x['score'], reverse=True)[:10]
-
+    # Post-processing: saving results and plotting
+    for result in all_file_results:
+        if save_results and result['all_results']:
+            top_results = sorted(result['all_results'], key=lambda x: x['score'], reverse=True)[:10]
             out_json_path = os.path.join(
                 results_dir, 
-                f"{os.path.splitext(os.path.basename(query_path))[0]}_lddt_top_results.json"
-                )
+                f"{os.path.splitext(result['file'])[0]}_lddt_top_results.json"
+            )
             with open(out_json_path, 'w') as f:
                 json.dump({
                     "title": "Top 10 results",
@@ -213,16 +244,16 @@ def compare_query_to_reference(target_residue_name, ref_neighbours, query_path,
                     "results": top_results
                 }, f, indent=4)
 
-        if plot and results:
-            scores = [r['score'] for r in results]
-            sns.histplot(scores, kde=True, bins=10, color='blue')
-            plt.title(f"lDDT-like (chemistry-aware) scores\nQuery: {os.path.basename(file_path)}")
-            plt.xlabel("lDDT-like score (0–1)")
-            plt.ylabel("Frequency")
-            plt.tight_layout()
-            out_png_path = os.path.join(results_dir, f"{os.path.basename(file_path).split('.')[0]}_score_hist.png")
-            plt.savefig(out_png_path, dpi=300, bbox_inches='tight')
-            plt.close()
+            if plot:
+                scores = [r['score'] for r in result['all_results']]
+                sns.histplot(scores, kde=True, bins=10, color='blue')
+                plt.title(f"lDDT-like scores\nQuery: {result['file']}")
+                plt.xlabel("lDDT-like score (0–1)")
+                plt.ylabel("Frequency")
+                plt.tight_layout()
+                out_png_path = os.path.join(results_dir, f"{os.path.splitext(result['file'])[0]}_score_hist.png")
+                plt.savefig(out_png_path, dpi=300, bbox_inches='tight')
+                plt.close()
 
     valid_results = [r for r in all_file_results if r['score'] is not None]
     top_10_results = sorted(valid_results, key=lambda x: x['score'], reverse=True)[:10]
@@ -232,13 +263,6 @@ def compare_query_to_reference(target_residue_name, ref_neighbours, query_path,
         print(f"▶ {r['file']}: Best match at chain {r['match_residue']['chain']} "
               f"residue {r['match_residue']['res_id']}, score={r['score']:.4f}, pairs={r['n_pairs']}")
 
-    # # Optionally: print files that had no valid matches
-    # skipped = [r['file'] for r in all_file_results if r['score'] is None]
-    # for s in skipped:
-    #     print(f"▶ {s}: No valid matches found.")
-
-
-    # Save top 10 results to JSON
     if save_results and top_10_results:
         top10_json_path = os.path.join(results_dir, "top_10_file_results.json")
         with open(top10_json_path, 'w') as f:
@@ -250,7 +274,6 @@ def compare_query_to_reference(target_residue_name, ref_neighbours, query_path,
                 "results": top_10_results
             }, f, indent=4)
 
-    # Histogram of all scores
     if plot and valid_results:
         all_scores = [r['score'] for r in valid_results]
         plt.figure(figsize=(6, 4))
@@ -262,8 +285,6 @@ def compare_query_to_reference(target_residue_name, ref_neighbours, query_path,
         plt.savefig(os.path.join(results_dir, "all_files_score_histogram.png"), dpi=300)
         plt.close()
 
-    # Histogram of all n_pairs
-    if plot and valid_results:
         all_pairs = [r['n_pairs'] for r in valid_results]
         plt.figure(figsize=(6, 4))
         sns.histplot(all_pairs, kde=False, bins=10, color='purple')
