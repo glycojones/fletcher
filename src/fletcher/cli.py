@@ -14,7 +14,7 @@ def main():
     parser = argparse.ArgumentParser(
         prog = "Fletcher",
         description = "Chemistry-aware lDDT-like scoring for PDB files",
-        epilog = "Example usage: fletcher --ref path/to/ref.pdb --queries path/to/query1.pdb path/to/query2.pdb --target_chain A --target_res 100")
+        epilog = "Example usage: fletcher --ref path/to/ref.pdb --query path/to/query1.pdb --target_chain A --target_res 100")
     
     parser.add_argument('-r', '--ref', help = "Reference PDB path", required = True)
     
