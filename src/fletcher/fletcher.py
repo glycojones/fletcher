@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from scipy.optimize import linear_sum_assignment
+from scipy.spatial.distance import pdist, squareform 
 
 # ----------------- Chemistry groups -----------------
 chemical_groups = {
@@ -18,10 +19,6 @@ chemical_groups = {
     "special": {"GLY"}
 }
 
-# ------------------- Modifications -------------------
-
-# Add common post-translational modifications if needed
-
 # ----------------- lDDT-like scoring -----------------
 
 def chemical_similarity(res1, res2):
@@ -32,48 +29,55 @@ def chemical_similarity(res1, res2):
             return 1.0
     return 5.0
 
-def euclidean_distance(coord1, coord2):
-    return math.sqrt(sum((a - b) ** 2 for a, b in zip(coord1, coord2)))
+def compute_lddt_like(
+        ref_neighbours, 
+        query_neighbours,
+        thresholds=[0.5, 1.0, 2.0, 4.0], 
+        min_pairs_required=3
+        ):
 
-def compute_lddt_like(ref_neighbours, query_neighbours,
-                      thresholds=[0.5, 1.0, 2.0, 4.0], min_pairs_required=3):
-    ref_pairs = {(i, j): euclidean_distance(r1['coordinates'], r2['coordinates'])
-                 for i, r1 in enumerate(ref_neighbours)
-                 for j, r2 in enumerate(ref_neighbours) if i < j}
-    query_pairs = {(i, j): euclidean_distance(q1['coordinates'], q2['coordinates'])
-                   for i, q1 in enumerate(query_neighbours)
-                   for j, q2 in enumerate(query_neighbours) if i < j}
+    ref_coords = np.array([r['coordinates'] for r in ref_neighbours])
+    ref_ids = [r['identity'] for r in ref_neighbours]
 
-    n_pairs = min(len(ref_pairs), len(query_pairs))
+    query_coords = np.array([r['coordinates'] for r in query_neighbours])
+    query_ids = [r['identity'] for r in query_neighbours]
+
+    n = len(ref_coords)
+    if n<2:
+        return None, 0
+    
+    # compute reference pairwise distances
+    ref_dists = pdist(ref_coords)
+    ref_pairs = np.triu_indices(n, k=1)
+    n_pairs = len(ref_dists)
+
     if n_pairs < min_pairs_required:
         return None, n_pairs
-
-    cost_matrix = np.array([
-        [
-            euclidean_distance(r['coordinates'], q['coordinates']) +
-            chemical_similarity(r['identity'], q['identity'])
-            for q in query_neighbours
-        ]
-        for r in ref_neighbours
-    ])
+    
+    # compute cost matrix using broadcasting
+    cost_matrix = np.linalg.norm(ref_coords[:, None, :] - query_coords[None, :, :], axis=2)
+    for i in range(n):
+        for j in range(len(query_coords)):
+            cost_matrix[i, j] += chemical_similarity(ref_ids[i], query_ids[j])
 
     row_ind, col_ind = linear_sum_assignment(cost_matrix)
     mapping = {r_idx: q_idx for r_idx, q_idx in zip(row_ind, col_ind)}
 
+    # compute score
+
     fractions = []
     for t in thresholds:
         count_within = 0
-        for (i, j), ref_dist in ref_pairs.items():
+        for idx, (i,j) in enumerate(zip(*ref_pairs)):
             if i in mapping and j in mapping:
-                q_dist = euclidean_distance(
-                    query_neighbours[mapping[i]]['coordinates'],
-                    query_neighbours[mapping[j]]['coordinates']
-                )
-                if abs(q_dist - ref_dist) <= t:
+                qi = query_coords[mapping[i]]
+                qj = query_coords[mapping[j]]
+                q_dist = np.linalg.norm(qi-qj)
+                if abs(q_dist - ref_dists[idx]) <= t:
                     count_within += 1
-        fractions.append(count_within / len(ref_pairs))
-    score = sum(fractions) / len(fractions)
+        fractions.append(count_within / n_pairs)
 
+    score = sum(fractions) / len(fractions)
     return score, n_pairs
 
 # ----------------- Main functions -----------------
