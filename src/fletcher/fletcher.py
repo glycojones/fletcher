@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from scipy.optimize import linear_sum_assignment
-from scipy.spatial.distance import pdist, squareform 
+from scipy.spatial.distance import pdist
 
 # ----------------- Chemistry groups -----------------
 chemical_groups = {
@@ -18,16 +18,18 @@ chemical_groups = {
     "negative": {"ASP", "GLU"},
     "special": {"GLY"}
 }
-
-# ----------------- lDDT-like scoring -----------------
+# Create a mapping from residue to its chemical group for quick lookup
+residue_to_group = {}
+for group_name, residues in chemical_groups.items():
+    for res in residues:
+        residue_to_group[res] = group_name
 
 def chemical_similarity(res1, res2):
     if res1 == res2:
         return 0.0
-    for group in chemical_groups.values():
-        if res1 in group and res2 in group:
-            return 1.0
-    return 5.0
+    return 1.0 if residue_to_group.get(res1) == residue_to_group.get(res2) else 5.0
+
+# ----------------- lDDT-like scoring -----------------
 
 def compute_lddt_like(
         ref_neighbours, 
@@ -94,22 +96,26 @@ def get_reference_neighbours(ref_file_path, target_chain_id, target_res_id, dist
     ref_neighbours = []
 
     for chain in ref_structure[0]:
-        if chain.name == target_chain_id:
-            for residue in chain:
-                if residue.seqid.num == target_res_id:
-                    target_residue_name = residue.name
-                    ca_atom = next((atom for atom in residue if atom.name == 'CA'), None)
-                    if ca_atom:
-                        marks = ref_search.find_neighbors(ca_atom, 0, distance_cutoff)
-                        for mark in marks:
-                            cra = mark.to_cra(ref_structure[0])
-                            if cra.atom.name == 'CA':
-                                pos = cra.atom.pos
-                                ref_neighbours.append({
-                                    'identity': cra.residue.name,
-                                    'coordinates': (pos.x, pos.y, pos.z)
-                                })
-                    break
+        if chain.name != target_chain_id:
+            continue
+        for residue in chain:
+            if residue.seqid.num != target_res_id:
+                continue
+            target_residue_name = residue.name
+            ca_atom = next((atom for atom in residue if atom.name == 'CA'), None)
+            if not ca_atom:
+                continue
+            marks = ref_search.find_neighbors(ca_atom, 0, distance_cutoff)
+            for mark in marks:
+                cra = mark.to_cra(ref_structure[0])
+                if cra.atom.name == 'CA':
+                    pos = cra.atom.pos
+                    ref_neighbours.append({
+                        'identity': cra.residue.name,
+                        'coordinates': (pos.x, pos.y, pos.z)
+                    })
+            break  
+
     if target_residue_name is None:
         raise ValueError("Target residue not found in reference structure")
 
@@ -127,24 +133,25 @@ def process_single_file(file_path, target_residue_name, ref_neighbours,
                 if residue.name != target_residue_name:
                     continue
                 ca_atom = next((atom for atom in residue if atom.name == 'CA'), None)
-                if ca_atom:
-                    marks = query_search.find_neighbors(ca_atom, 0, distance_cutoff)
-                    neighbours = []
-                    for mark in marks:
-                        cra = mark.to_cra(query_structure[0])
-                        if cra.atom.name == 'CA':
-                            pos = cra.atom.pos
-                            neighbours.append({
-                                'identity': cra.residue.name,
-                                'coordinates': (pos.x, pos.y, pos.z)
-                            })
-                    query_candidates.append({
-                        'match_residue': {
-                            'chain': chain.name,
-                            'res_id': residue.seqid.num
-                        },
-                        'neighbours': neighbours
-                    })
+                if not ca_atom:
+                    continue
+                marks = query_search.find_neighbors(ca_atom, 0, distance_cutoff)
+                neighbours = []
+                for mark in marks:
+                    cra = mark.to_cra(query_structure[0])
+                    if cra.atom.name == 'CA':
+                        pos = cra.atom.pos
+                        neighbours.append({
+                            'identity': cra.residue.name,
+                            'coordinates': (pos.x, pos.y, pos.z)
+                        })
+                query_candidates.append({
+                    'match_residue': {
+                        'chain': chain.name,
+                        'res_id': residue.seqid.num
+                    },
+                    'neighbours': neighbours
+                })
 
         results = []
         for candidate in query_candidates:
