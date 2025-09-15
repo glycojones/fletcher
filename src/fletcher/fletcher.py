@@ -34,7 +34,8 @@ def chemical_similarity(res1, res2):
 def compute_lddt_like(
         ref_neighbours, 
         query_neighbours,
-        thresholds=[0.5, 1.0, 2.0, 4.0], 
+        #thresholds=[0.5, 1.0, 2.0, 4.0],
+        lddt_thresholds, 
         min_pairs_required=3
         ):
 
@@ -68,7 +69,7 @@ def compute_lddt_like(
     # compute score
 
     fractions = []
-    for t in thresholds:
+    for t in lddt_thresholds:
         count_within = 0
         for idx, (i,j) in enumerate(zip(*ref_pairs)):
             if i in mapping and j in mapping:
@@ -93,6 +94,9 @@ def get_reference_neighbours(ref_file_path, target_chain_id, target_res_id, dist
     
     ref_search = gemmi.NeighborSearch(ref_structure[0], ref_structure.cell, distance_cutoff).populate(include_h=False)
     print(f"Reference structure loaded and neighbours searched: {ref_file_path}")
+
+    # NB read_structure takes 1 second per structure to run and so does Neighbor_Search
+    # so reading & processing takes 2 seconds per structure hence the slow run time
 
     target_residue_name = None
     ref_neighbours = []

@@ -60,6 +60,10 @@ def main():
         distance_cutoff=args.distance_cutoff
     )
 
+    lddt_thresholds = args.lddt_thresholds
+    print(f"lddt_thresholds {lddt_thresholds}")# Debug print to confirm thresholds are passed correctly
+    print(f"first lddt_threshold {lddt_thresholds[0]}")# Debug print to confirm thresholds are passed correctly 
+
     compare_query_to_reference(
         target_residue_name, 
         ref_neighbours, 
