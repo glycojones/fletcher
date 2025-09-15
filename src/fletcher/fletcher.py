@@ -34,7 +34,6 @@ def chemical_similarity(res1, res2):
 def compute_lddt_like(
         ref_neighbours, 
         query_neighbours,
-        #thresholds=[0.5, 1.0, 2.0, 4.0],
         lddt_thresholds, 
         min_pairs_required=3
         ):
@@ -164,7 +163,7 @@ def process_single_file(file_path, target_residue_name, ref_neighbours,
         results = []
         for candidate in query_candidates:
             score, n_pairs = compute_lddt_like(ref_neighbours, candidate['neighbours'],
-                                               thresholds=lddt_thresholds,
+                                               lddt_thresholds=lddt_thresholds,
                                                min_pairs_required=min_pairs_required)
             if score is not None:
                 results.append({
