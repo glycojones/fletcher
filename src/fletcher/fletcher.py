@@ -129,7 +129,7 @@ def process_single_file(file_path, target_residue_name, ref_neighbours,
         query_structure = gemmi.read_structure(file_path)
         query_search = gemmi.NeighborSearch(query_structure[0], query_structure.cell, distance_cutoff).populate(include_h=False)
 
-        print(f"Query structure loaded and neighbours searched: {file_path}")
+        print(f"{file_path} processed")
 
         query_candidates = []
         for chain in query_structure[0]:
@@ -225,7 +225,7 @@ def compare_query_to_reference(
     all_file_results = []
 
     # Parallel processing of files
-    with ProcessPoolExecutor(max_workers=200) as executor:
+    with ProcessPoolExecutor(max_workers=300) as executor:
         futures = [
             executor.submit(
                 process_single_file,
