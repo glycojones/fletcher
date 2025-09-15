@@ -238,33 +238,33 @@ def compare_query_to_reference(
             result = future.result()
             all_file_results.append(result)
 
-    # Post-processing: saving results and plotting
-    for result in all_file_results:
-        if save_results and result['all_results']:
-            top_results = sorted(result['all_results'], key=lambda x: x['score'], reverse=True)[:10]
-            out_json_path = os.path.join(
-                results_dir, 
-                f"{os.path.splitext(result['file'])[0]}_lddt_top_results.json"
-            )
-            with open(out_json_path, 'w') as f:
-                json.dump({
-                    "title": "Top 10 results",
-                    "score_type": "lDDT-like (chemistry-aware)",
-                    "thresholds": lddt_thresholds,
-                    "min_pairs_required": min_pairs_required,
-                    "results": top_results
-                }, f, indent=4)
+    # # Post-processing: saving results and plotting
+    # for result in all_file_results:
+    #     if save_results and result['all_results']:
+    #         top_results = sorted(result['all_results'], key=lambda x: x['score'], reverse=True)[:10]
+    #         out_json_path = os.path.join(
+    #             results_dir, 
+    #             f"{os.path.splitext(result['file'])[0]}_lddt_top_results.json"
+    #         )
+    #         with open(out_json_path, 'w') as f:
+    #             json.dump({
+    #                 "title": "Top 10 results",
+    #                 "score_type": "lDDT-like (chemistry-aware)",
+    #                 "thresholds": lddt_thresholds,
+    #                 "min_pairs_required": min_pairs_required,
+    #                 "results": top_results
+    #             }, f, indent=4)
 
-            if plot:
-                scores = [r['score'] for r in result['all_results']]
-                sns.histplot(scores, kde=True, bins=10, color='blue')
-                plt.title(f"lDDT-like scores\nQuery: {result['file']}")
-                plt.xlabel("lDDT-like score (0–1)")
-                plt.ylabel("Frequency")
-                plt.tight_layout()
-                out_png_path = os.path.join(results_dir, f"{os.path.splitext(result['file'])[0]}_score_hist.png")
-                plt.savefig(out_png_path, dpi=300, bbox_inches='tight')
-                plt.close()
+    #         if plot:
+    #             scores = [r['score'] for r in result['all_results']]
+    #             sns.histplot(scores, kde=True, bins=10, color='blue')
+    #             plt.title(f"lDDT-like scores\nQuery: {result['file']}")
+    #             plt.xlabel("lDDT-like score (0–1)")
+    #             plt.ylabel("Frequency")
+    #             plt.tight_layout()
+    #             out_png_path = os.path.join(results_dir, f"{os.path.splitext(result['file'])[0]}_score_hist.png")
+    #             plt.savefig(out_png_path, dpi=300, bbox_inches='tight')
+    #             plt.close()
 
     valid_results = [r for r in all_file_results if r['score'] is not None]
     top_10_results = sorted(valid_results, key=lambda x: x['score'], reverse=True)[:10]
