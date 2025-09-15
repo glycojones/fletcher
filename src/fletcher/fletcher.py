@@ -1,4 +1,3 @@
-import math
 import json
 import os
 import gemmi
@@ -18,6 +17,7 @@ chemical_groups = {
     "negative": {"ASP", "GLU"},
     "special": {"GLY"}
 }
+
 # Create a mapping from residue to its chemical group for quick lookup
 residue_to_group = {}
 for group_name, residues in chemical_groups.items():
@@ -90,7 +90,9 @@ def get_reference_neighbours(ref_file_path, target_chain_id, target_res_id, dist
         ref_structure = gemmi.read_structure(ref_file_path)
     else: 
         raise ValueError("Unsupported file format. Use PDB files.")
+    
     ref_search = gemmi.NeighborSearch(ref_structure[0], ref_structure.cell, distance_cutoff).populate(include_h=False)
+    print(f"Reference structure loaded and neighbours searched: {ref_file_path}")
 
     target_residue_name = None
     ref_neighbours = []
@@ -126,6 +128,8 @@ def process_single_file(file_path, target_residue_name, ref_neighbours,
     try:
         query_structure = gemmi.read_structure(file_path)
         query_search = gemmi.NeighborSearch(query_structure[0], query_structure.cell, distance_cutoff).populate(include_h=False)
+
+        print(f"Query structure loaded and neighbours searched: {file_path}")
 
         query_candidates = []
         for chain in query_structure[0]:
@@ -237,6 +241,7 @@ def compare_query_to_reference(
         for future in as_completed(futures):
             result = future.result()
             all_file_results.append(result)
+            print(f"Compared query to reference {file_path}")
 
     # # Post-processing: saving results and plotting
     # for result in all_file_results:
@@ -296,6 +301,8 @@ def compare_query_to_reference(
         plt.savefig(os.path.join(results_dir, "all_files_score_histogram.png"), dpi=300)
         plt.close()
 
+        print(f"Score histogram saved to {results_dir}")
+
         all_pairs = [r['n_pairs'] for r in valid_results]
         plt.figure(figsize=(6, 4))
         sns.histplot(all_pairs, kde=False, bins=10, color='purple')
@@ -305,3 +312,5 @@ def compare_query_to_reference(
         plt.tight_layout()
         plt.savefig(os.path.join(results_dir, "all_files_pairs_histogram.png"), dpi=300)
         plt.close()
+
+        print(f"Pairs histogram saved to {results_dir}")
