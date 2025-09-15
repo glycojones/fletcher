@@ -225,7 +225,7 @@ def compare_query_to_reference(
     all_file_results = []
 
     # Parallel processing of files
-    with ProcessPoolExecutor() as executor:
+    with ProcessPoolExecutor(max_workers=200) as executor:
         futures = [
             executor.submit(
                 process_single_file,
@@ -241,7 +241,6 @@ def compare_query_to_reference(
         for future in as_completed(futures):
             result = future.result()
             all_file_results.append(result)
-            print(f"Compared query to reference {file_path}")
 
     # # Post-processing: saving results and plotting
     # for result in all_file_results:
