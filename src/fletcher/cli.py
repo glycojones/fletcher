@@ -1,5 +1,4 @@
 import argparse
-
 import os
 import sys
 
@@ -16,7 +15,9 @@ def main():
         description = "Chemistry-aware lDDT-like scoring for PDB files",
         epilog = "Example usage: fletcher --ref path/to/ref.pdb --query path/to/query1.pdb --target_chain A --target_res 100")
     
-    parser.add_argument('-r', '--ref', help = "Reference PDB path", required = True)
+    parser.add_argument('-r', '--ref', \
+                        help = "Reference PDB path", \
+                        required = True)
     
     parser.add_argument('-q', '--query', \
                         help = "Query PDB file", \
@@ -31,19 +32,20 @@ def main():
                         type = int, 
                         required = True)
     
-    parser.add_argument('--results_dir', \
-                        default = "results", \
-                        help="Directory to save results")
-    
     parser.add_argument('--distance_cutoff', \
                         type=float, 
                         default=15.0, 
                         help="Distance cutoff for neighbors")
     
+    parser.add_argument('--all_atoms', \
+                        type=bool, \
+                        default=False, \
+                        help="Use all atoms for distance calculations (default: False, use only CA)")
+    
     parser.add_argument('--min_pairs_required', \
                         type=int,
                         default=3, 
-                        help="Minimum number of CA-atom pairs required to compute a score (default: 3)")
+                        help="Minimum number of atom pairs required to compute a score (default: 3)")
     
     parser.add_argument('--lddt_thresholds', \
                         nargs='+', 
@@ -51,24 +53,26 @@ def main():
                         type=float,
                         help="Distance thresholds for lDDT scoring (default: 0.5 1.0 2.0 4.0)")
 
+    parser.add_argument('--results_dir', \
+                        default = "results", \
+                        help="Directory to save results")
+
     args = parser.parse_args()
 
     target_residue_name, ref_neighbours = get_reference_neighbours(
         args.ref, 
         args.target_chain,
         args.target_res,
-        distance_cutoff=args.distance_cutoff
+        distance_cutoff=args.distance_cutoff,
+        all_atoms=args.all_atoms
     )
-
-    lddt_thresholds = args.lddt_thresholds
-    print(f"lddt_thresholds {lddt_thresholds}")# Debug print to confirm thresholds are passed correctly
-    print(f"first lddt_threshold {lddt_thresholds[0]}")# Debug print to confirm thresholds are passed correctly 
 
     compare_query_to_reference(
         target_residue_name, 
         ref_neighbours, 
         args.query,
         distance_cutoff=args.distance_cutoff,
+        all_atoms=args.all_atoms,
         min_pairs_required=args.min_pairs_required,
         lddt_thresholds=args.lddt_thresholds,
         results_dir=args.results_dir
