@@ -31,66 +31,71 @@ def chemical_similarity(res1, res2):
 
 # ----------------- lDDT-like scoring -----------------
 
-def compute_lddt_like(
+def compute_score(
         ref_neighbours, 
         query_neighbours,
         lddt_thresholds, 
-        min_pairs_required=3
+        min_pairs_required=3,
+        all_atoms=False
         ):
 
-    ref_coords = np.array([r['coordinates'] for r in ref_neighbours])
-    ref_ids = [r['identity'] for r in ref_neighbours]
+    if all_atoms:
+        raise NotImplementedError("All atoms scoring not implemented yet.")
+    else:
+        ref_coords = np.array([r['coordinates'] for r in ref_neighbours])
+        ref_ids = [r['residue_identity'] for r in ref_neighbours]
 
-    query_coords = np.array([r['coordinates'] for r in query_neighbours])
-    query_ids = [r['identity'] for r in query_neighbours]
+        query_coords = np.array([r['coordinates'] for r in query_neighbours])
+        query_ids = [r['residue_identity'] for r in query_neighbours]
 
-    n = len(ref_coords)
-    if n<2:
-        return None, 0
+        n = len(ref_coords)
+        if n<2:
+            return None, 0
     
-    # compute reference pairwise distances
-    ref_dists = pdist(ref_coords)
-    ref_pairs = np.triu_indices(n, k=1)
-    n_pairs = len(ref_dists)
+        # compute reference pairwise distances
+        ref_dists = pdist(ref_coords)
+        ref_pairs = np.triu_indices(n, k=1)
+        n_pairs = len(ref_dists)
 
-    if n_pairs < min_pairs_required:
-        return None, n_pairs
+        if n_pairs < min_pairs_required:
+            return None, n_pairs
     
-    # compute cost matrix using broadcasting
-    cost_matrix = np.linalg.norm(ref_coords[:, None, :] - query_coords[None, :, :], axis=2)
-    for i in range(n):
-        for j in range(len(query_coords)):
-            cost_matrix[i, j] += chemical_similarity(ref_ids[i], query_ids[j])
+        # compute cost matrix using broadcasting
+        cost_matrix = np.linalg.norm(ref_coords[:, None, :] - query_coords[None, :, :], axis=2)
+        for i in range(n):
+            for j in range(len(query_coords)):
+                cost_matrix[i, j] += chemical_similarity(ref_ids[i], query_ids[j])
 
-    row_ind, col_ind = linear_sum_assignment(cost_matrix)
-    mapping = {r_idx: q_idx for r_idx, q_idx in zip(row_ind, col_ind)}
+        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+        mapping = {r_idx: q_idx for r_idx, q_idx in zip(row_ind, col_ind)}
 
-    # compute score
+        # compute score
 
-    fractions = []
-    for t in lddt_thresholds:
-        count_within = 0
-        for idx, (i,j) in enumerate(zip(*ref_pairs)):
-            if i in mapping and j in mapping:
-                qi = query_coords[mapping[i]]
-                qj = query_coords[mapping[j]]
-                q_dist = np.linalg.norm(qi-qj)
-                if abs(q_dist - ref_dists[idx]) <= t:
-                    count_within += 1
-        fractions.append(count_within / n_pairs)
+        fractions = []
+        for t in lddt_thresholds:
+            count_within = 0
+            for idx, (i,j) in enumerate(zip(*ref_pairs)):
+                if i in mapping and j in mapping:
+                    qi = query_coords[mapping[i]]
+                    qj = query_coords[mapping[j]]
+                    q_dist = np.linalg.norm(qi-qj)
+                    if abs(q_dist - ref_dists[idx]) <= t:
+                        count_within += 1
+            fractions.append(count_within / n_pairs)
 
-    score = sum(fractions) / len(fractions)
-    return score, n_pairs
+        score = sum(fractions) / len(fractions)
+        return score, n_pairs
 
 # ----------------- Main functions -----------------
 
-def get_reference_neighbours(ref_file_path, target_chain_id, target_res_id, distance_cutoff=15.0):
+def get_reference_neighbours(ref_file_path, target_chain_id, target_res_id, distance_cutoff=15.0, all_atoms=False):
     
+    # need to work on this so that it can read mmcif files too
     if ref_file_path.endswith('.pdb'):
         ref_structure = gemmi.read_structure(ref_file_path)
     else: 
         raise ValueError("Unsupported file format. Use PDB files.")
-    
+
     ref_search = gemmi.NeighborSearch(ref_structure[0], ref_structure.cell, distance_cutoff).populate(include_h=False)
     print(f"Reference structure loaded and neighbours searched: {ref_file_path}")
 
@@ -101,24 +106,40 @@ def get_reference_neighbours(ref_file_path, target_chain_id, target_res_id, dist
     ref_neighbours = []
 
     for chain in ref_structure[0]:
+        # isolating the target chain
         if chain.name != target_chain_id:
             continue
+        # iterating through residues in the target chain to find target residue
         for residue in chain:
             if residue.seqid.num != target_res_id:
                 continue
-            target_residue_name = residue.name
-            ca_atom = next((atom for atom in residue if atom.name == 'CA'), None)
-            if not ca_atom:
-                continue
-            marks = ref_search.find_neighbors(ca_atom, 0, distance_cutoff)
-            for mark in marks:
-                cra = mark.to_cra(ref_structure[0])
-                if cra.atom.name == 'CA':
-                    pos = cra.atom.pos
-                    ref_neighbours.append({
-                        'identity': cra.residue.name,
-                        'coordinates': (pos.x, pos.y, pos.z)
-                    })
+            target_residue_name = residue.name # found the target residue
+
+            # now find neighbours of target residue
+            if all_atoms:
+                for atom in residue:
+                    marks = ref_search.find_neighbors(atom, 0, distance_cutoff)
+                    for mark in marks:
+                        cra = mark.to_cra(ref_structure[0])
+                        pos = cra.atom.pos
+                        ref_neighbours.append({
+                            'residue_identity': cra.residue.name,
+                            'atom_identity': cra.atom.name,
+                            'coordinates': (pos.x, pos.y, pos.z)
+                        }) 
+            else:
+                ca_atom = next((atom for atom in residue if atom.name == 'CA'), None)
+                if not ca_atom:
+                    continue
+                marks = ref_search.find_neighbors(ca_atom, 0, distance_cutoff)
+                for mark in marks:
+                    cra = mark.to_cra(ref_structure[0])
+                    if cra.atom.name == 'CA':
+                        pos = cra.atom.pos
+                        ref_neighbours.append({
+                            'residue_identity': cra.residue.name,
+                            'coordinates': (pos.x, pos.y, pos.z)
+                        })
             break  
 
     if target_residue_name is None:
@@ -127,7 +148,7 @@ def get_reference_neighbours(ref_file_path, target_chain_id, target_res_id, dist
     return target_residue_name, ref_neighbours
 
 def process_single_file(file_path, target_residue_name, ref_neighbours,
-                        distance_cutoff, lddt_thresholds, min_pairs_required):
+                        distance_cutoff, all_atoms, lddt_thresholds, min_pairs_required):
     try:
         query_structure = gemmi.read_structure(file_path)
         query_search = gemmi.NeighborSearch(query_structure[0], query_structure.cell, distance_cutoff).populate(include_h=False)
@@ -135,36 +156,65 @@ def process_single_file(file_path, target_residue_name, ref_neighbours,
         print(f"{file_path} processed")
 
         query_candidates = []
+
+        # find all residues in query that match target residue name
         for chain in query_structure[0]:
             for residue in chain:
                 if residue.name != target_residue_name:
                     continue
-                ca_atom = next((atom for atom in residue if atom.name == 'CA'), None)
-                if not ca_atom:
-                    continue
-                marks = query_search.find_neighbors(ca_atom, 0, distance_cutoff)
-                neighbours = []
-                for mark in marks:
-                    cra = mark.to_cra(query_structure[0])
-                    if cra.atom.name == 'CA':
-                        pos = cra.atom.pos
-                        neighbours.append({
-                            'identity': cra.residue.name,
-                            'coordinates': (pos.x, pos.y, pos.z)
+
+                # found a candidate residue, now find its neighbours
+                if all_atoms:
+                    for atom in residue:
+                        # find neighbours for each atom
+                        marks = query_search.find_neighbors(atom, 0, distance_cutoff)
+                        neighbours = []
+                        for mark in marks:
+                            cra = mark.to_cra(query_structure[0])
+                            pos = cra.atom.pos
+                            neighbours.append({
+                                'residue_identity': cra.residue.name,
+                                'atom_identity': cra.atom.name,
+                                'coordinates': (pos.x, pos.y, pos.z)
+                            })
+                        query_candidates.append({
+                            'match_residue': {
+                                'chain': chain.name,
+                                'res_id': residue.seqid.num
+                            },
+                            'neighbours': neighbours
                         })
-                query_candidates.append({
-                    'match_residue': {
-                        'chain': chain.name,
-                        'res_id': residue.seqid.num
-                    },
-                    'neighbours': neighbours
-                })
+                else:
+                    ca_atom = next((atom for atom in residue if atom.name == 'CA'), None)
+                    if not ca_atom:
+                        continue
+                    marks = query_search.find_neighbors(ca_atom, 0, distance_cutoff)
+                    neighbours = []
+                    for mark in marks:
+                        cra = mark.to_cra(query_structure[0])
+                        if cra.atom.name == 'CA':
+                            pos = cra.atom.pos
+                            neighbours.append({
+                                'residue_identity': cra.residue.name,
+                                'coordinates': (pos.x, pos.y, pos.z)
+                            })
+                    query_candidates.append({
+                        'match_residue': {
+                            'chain': chain.name,
+                            'res_id': residue.seqid.num
+                        },
+                        'neighbours': neighbours
+                    })
 
         results = []
+
+        # score each candidate
         for candidate in query_candidates:
-            score, n_pairs = compute_lddt_like(ref_neighbours, candidate['neighbours'],
-                                               lddt_thresholds=lddt_thresholds,
-                                               min_pairs_required=min_pairs_required)
+            score, n_pairs = compute_score(ref_neighbours, 
+                                           candidate['neighbours'],
+                                           lddt_thresholds=lddt_thresholds,
+                                           min_pairs_required=min_pairs_required,
+                                           all_atoms=all_atoms)
             if score is not None:
                 results.append({
                     'match_residue': candidate['match_residue'],
@@ -172,6 +222,7 @@ def process_single_file(file_path, target_residue_name, ref_neighbours,
                     'n_pairs': n_pairs
                 })
 
+        # find best scoring candidate
         if results:
             best = max(results, key=lambda x: x['score'])
             return {
@@ -190,6 +241,7 @@ def process_single_file(file_path, target_residue_name, ref_neighbours,
                 'all_results': []
             }
 
+    # Error handling
     except Exception as e:
         print(f"❌ Error processing {file_path}: {e}")
         return {
@@ -201,11 +253,13 @@ def process_single_file(file_path, target_residue_name, ref_neighbours,
             'all_results': []
         }
 
+# ----------------- Compare Query to Reference -----------------
 def compare_query_to_reference(
         target_residue_name, 
         ref_neighbours, 
         query_path,
         distance_cutoff=15.0, 
+        all_atoms=False,
         min_pairs_required=3,
         lddt_thresholds=[0.5, 1.0, 2.0, 4.0],
         save_results=True, 
@@ -213,8 +267,11 @@ def compare_query_to_reference(
         plot=True
         ):
 
-    os.makedirs(results_dir, exist_ok=True)
+    # prepare results directory
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir, exist_ok=True)
 
+    # gather query files
     if os.path.isdir(query_path):
         query_files = [os.path.join(query_path, f) for f in os.listdir(query_path)
                        if f.endswith('.pdb')]
@@ -228,7 +285,8 @@ def compare_query_to_reference(
     all_file_results = []
 
     # Parallel processing of files
-    with ProcessPoolExecutor(max_workers=300) as executor:
+    # Using ProcessPoolExecutor for CPU-bound tasks
+    with ProcessPoolExecutor(max_workers = os.cpu_count() or 4) as executor:
         futures = [
             executor.submit(
                 process_single_file,
@@ -236,6 +294,7 @@ def compare_query_to_reference(
                 target_residue_name,
                 ref_neighbours,
                 distance_cutoff,
+                all_atoms,
                 lddt_thresholds,
                 min_pairs_required
             ) for file_path in query_files
@@ -273,14 +332,21 @@ def compare_query_to_reference(
     #             plt.savefig(out_png_path, dpi=300, bbox_inches='tight')
     #             plt.close()
 
+    # ----- Summarize top 10 results across all files -----
+
+    # filter out files with no valid score
     valid_results = [r for r in all_file_results if r['score'] is not None]
+
+    # sort by score and take top 10
     top_10_results = sorted(valid_results, key=lambda x: x['score'], reverse=True)[:10]
 
+    # print summary
     print("\nTop 10 query files:")
     for r in top_10_results:
         print(f"▶ {r['file']}: Best match at chain {r['match_residue']['chain']} "
               f"residue {r['match_residue']['res_id']}, score={r['score']:.4f}, pairs={r['n_pairs']}")
 
+    # save top 10 summary
     if save_results and top_10_results:
         top10_json_path = os.path.join(results_dir, "top_10_file_results.json")
         with open(top10_json_path, 'w') as f:
@@ -292,6 +358,7 @@ def compare_query_to_reference(
                 "results": top_10_results
             }, f, indent=4)
 
+    # plot overall distributions
     if plot and valid_results:
         all_scores = [r['score'] for r in valid_results]
         plt.figure(figsize=(6, 4))
