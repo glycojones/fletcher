@@ -256,6 +256,13 @@ def find_structural_motifs ( filename = "",
                     hit = [[] for _ in residue_info_list_of_dict]
                     hit[0].append(first_residue_info)
 
+                    # If there are no target positions, the hit is already complete
+                    if len(residue_info_list_of_dict) == 1:
+                        hit_string = json.dumps(hit, sort_keys=False, indent=2)
+                        if hit_string not in list_of_hits:
+                            list_of_hits.append(hit)
+                        continue  # Skip neighbour search – no targets to find
+
                     marks = neighbour_search.find_neighbors(residue[-1], 0, distance)
 
                     for mark in marks:
