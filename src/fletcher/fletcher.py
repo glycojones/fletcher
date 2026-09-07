@@ -9,9 +9,8 @@ import json
 import pickle
 import itertools
 from pathlib import Path
-from math import atan2, degrees, exp
+from math import atan2, degrees, exp, sqrt
 
-# Third-party dependencies (managed by pip)
 import gemmi
 import numpy as np
 
@@ -106,7 +105,7 @@ def calculate_chis(residue):
         for required_atom_name in required_atom_names:
             found = False
             for atom in residue:
-                atom_name = atom.name.replace(' ', '') # No idea if we'll need .replace 
+                atom_name = atom.name.replace(' ', '')
                 if atom_name in (required_atom_name, required_atom_name + ':A'):
                     chi_atoms.append(atom)
                     found = True
@@ -198,85 +197,31 @@ def convert_residue_info_list_to_dict_format(residue_info_list):
     return residue_info_list_of_dict
 
 def create_script_file ( filename = "", list_of_hits = [ ] ) :
-  with open ( filename.split('.')[0] + '.py', 'w' ) as file_out :
-    file_out.write ( "# File programmatically created by Fletcher\n" )
-    file_out.write ( 'handle_read_draw_molecule_with_recentre ("%s", 1)\n' % filename )
-    file_out.write ( 'interesting_things_gui ("Results from Fletcher",[\n')
-    for hit in list_of_hits[0][0]:
-        file_out.write ( '["%s %s", %.3f, %.3f, %.3f, ]' \
-                                    % ( hit['name'], \
-                                        hit['seqid'], \
-                                        hit['coordinates'][0], \
-                                        hit['coordinates'][1], \
-                                        hit['coordinates'][2] ))
-        if hit != list_of_hits[-1] :
-            file_out.write(',\n')
-    file_out.write ( '])\n')
-    file_out.close ( )
+    with open ( filename.split('.')[0] + '.py', 'w' ) as file_out :
+        file_out.write ( "# File programmatically created by Fletcher\n" )
+        file_out.write ( 'handle_read_draw_molecule_with_recentre ("%s", 1)\n' % filename )
+        file_out.write ( 'interesting_things_gui ("Results from Fletcher",[\n')
+        for hit in list_of_hits:
+            if hit and isinstance(hit[0], list):
+                flat_residues = [item for sublist in hit for item in sublist]
+            else:
+                flat_residues = hit
+            for residue_info in flat_residues:
+                file_out.write ( '["%s %s", %.3f, %.3f, %.3f, ]' \
+                                            % ( residue_info['name'], \
+                                                residue_info['seqid'], \
+                                                residue_info['coordinates'][0], \
+                                                residue_info['coordinates'][1], \
+                                                residue_info['coordinates'][2] ))
+                if residue_info != flat_residues[-1] :
+                    file_out.write(',\n')
+            if hit != list_of_hits[-1] :
+                file_out.write(',\n')
+        file_out.write ( '])\n')
+        file_out.close ( )
 
 ###############################################################
-# argument parser
-###############################################################
-
-if __name__ == '__main__':
-  parser = argparse.ArgumentParser ( 
-                    prog='Fletcher',
-                    description=fletcher_description,
-                    epilog='' )
-
-  parser.add_argument ( '-f', '--filename', \
-                        help = "The name of the file to be processed, in PDB or mmCIF format.", \
-                        required = True )                  
-
-  parser.add_argument ( '-r', '--residues', \
-                        help = "A list of residues in one-letter code, comma separated, including alternatives, e.g. H:1,H:2,F:1~W:3:2~Y", \
-                        default = "GF", required = True )                       
-
-  parser.add_argument ( '-d', '--distance', \
-                        help = "Specifies how far each of the residues can be from the rest, in Angstroms.", \
-                        default = "0.0", required = True )  
-
-  parser.add_argument ( '-p', '--plddt', \
-                        help = "Flag up candidate residues with average pLDDT below threshold (Jumper et al., 2020).", \
-                        default = "70.0", required = False )
-  
-  parser.add_argument ( '-n', '--nterm', \
-                        help = 'Require one residue to be at the n-terminus', \
-                        choices = [ 'yes', 'no' ], \
-                        default = 'no' )
-  
-  parser.add_argument ( '-c', '--cterm', \
-                        help = 'Require one residue to be at the c-terminus', \
-                        choices = [ 'yes', 'no' ], \
-                        default = 'no' )
-
-  args = parser.parse_args ( )
-
-###############################################################
-# interpretation of arguments 
-###############################################################
-
-filename = args.filename
-residue_info_list = args.residues.split(',')
-distance = float ( args.distance )
-min_plddt = float ( args.plddt )
-
-###############################################################
-# default print
-###############################################################
-
-print ( fletcher_description )
-
-print ( "Running Fletcher with the following parameters:\n"
-          "\nFilename: ", filename, 
-          "\nResidue list: ", residue_info_list, 
-          "\nDistance: ", distance, 
-          "\npLDDT: ", min_plddt,
-          "\n" 
-          )
-
-###############################################################
-# main function definition
+# main search function
 ###############################################################
 
 def find_structural_motifs ( filename = "",
@@ -302,7 +247,6 @@ def find_structural_motifs ( filename = "",
                     'name': residue.name,
                     'seqid': str(residue.seqid),
                     'rotamer': str(get_classification(residue.name, calculate_chis(residue))),
-                    ########## all are coming out as 0.0 below
                     'plddt': ('LOW PLDDT: %.2f' % residue[-1].b_iso) if residue[-1].b_iso < min_plddt else ('%.2f' % residue[-1].b_iso),
                     'coordinates': residue[-1].pos.tolist()
                 }
@@ -311,6 +255,13 @@ def find_structural_motifs ( filename = "",
 
                     hit = [[] for _ in residue_info_list_of_dict]
                     hit[0].append(first_residue_info)
+
+                    # If there are no target positions, the hit is already complete
+                    if len(residue_info_list_of_dict) == 1:
+                        hit_string = json.dumps(hit, sort_keys=False, indent=2)
+                        if hit_string not in list_of_hits:
+                            list_of_hits.append(hit)
+                        continue  # Skip neighbour search – no targets to find
 
                     marks = neighbour_search.find_neighbors(residue[-1], 0, distance)
 
@@ -363,13 +314,206 @@ def find_structural_motifs ( filename = "",
     else :
         print ("\nNo results found :-( \n")
     return list_of_hits
-   
+
 ###############################################################
-# running main function 
+# helper functions for multi‑motif parsing and filtering
 ###############################################################
 
-if len (residue_info_list) > 1 and distance > 0.0:
-    find_structural_motifs(filename, 
-                           residue_info_list,  
-                           distance, 
-                           min_plddt)
+def parse_motifs_from_string(motifs_string):
+    motifs = []
+    for motif_part in motifs_string.split('|'):
+        motif_part = motif_part.strip()
+        if not motif_part:
+            continue
+        if ':' in motif_part:
+            residues_part, dist_str = motif_part.rsplit(':', 1)
+            try:
+                dist = float(dist_str)
+            except ValueError:
+                residues_part = motif_part
+                dist = None
+        else:
+            residues_part = motif_part
+            dist = None
+        motifs.append({
+            'residues': residues_part,
+            'distance': dist
+        })
+    return motifs
+
+def check_proximity(flat_hit, max_distance):
+    if max_distance is None or max_distance <= 0:
+        return True
+    coords = [np.array(r['coordinates']) for r in flat_hit]
+    for i in range(len(coords)):
+        for j in range(i+1, len(coords)):
+            dist = np.linalg.norm(coords[i] - coords[j])
+            if dist > max_distance:
+                return False
+    return True
+
+###############################################################
+# argument parser
+###############################################################
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser ( 
+                    prog='Fletcher',
+                    description=fletcher_description,
+                    epilog='' )
+
+  parser.add_argument ( '-f', '--filename', \
+                        help = "The name of the file to be processed, in PDB or mmCIF format.", \
+                        required = True )                  
+
+  parser.add_argument ( '-r', '--residues', \
+                        help = "A list of residues in one-letter code, comma separated, including alternatives, e.g. H:1,H:2,F:1~W:3:2~Y", \
+                        default = "", required = False )                       
+
+  parser.add_argument ( '--motifs', \
+                        help = "Multiple motifs separated by '|'. Each motif: anchor,targets:distance. "
+                               "Use ',' for AND between positions, and '~' for OR between residues.", \
+                        required = False )                       
+
+  parser.add_argument ( '-d', '--distance', \
+                        help = "Default distance if not specified per motif in --motifs (Angstroms).", \
+                        default = "5.0", required = False )  
+
+  parser.add_argument ( '--proximity', \
+                        help = "Maximum allowed distance (Å) between any two residues from different motifs.", \
+                        default = "0.0", required = False )
+
+  parser.add_argument ( '-p', '--plddt', \
+                        help = "Flag up candidate residues with average pLDDT below threshold (Jumper et al., 2020).", \
+                        default = "70.0", required = False )
+  
+  parser.add_argument ( '-n', '--nterm', \
+                        help = 'Require one residue to be at the n-terminus', \
+                        choices = [ 'yes', 'no' ], \
+                        default = 'no' )
+  
+  parser.add_argument ( '-c', '--cterm', \
+                        help = 'Require one residue to be at the c-terminus', \
+                        choices = [ 'yes', 'no' ], \
+                        default = 'no' )
+
+  args = parser.parse_args ( )
+
+###############################################################
+# interpretation of arguments
+###############################################################
+
+filename = args.filename
+distance = float ( args.distance )
+min_plddt = float ( args.plddt )
+proximity_threshold = float ( args.proximity ) if args.proximity else 0.0
+
+###############################################################
+# multi‑motif mode
+###############################################################
+
+if args.motifs:
+    print ( fletcher_description )
+    print ( "Running Fletcher with the following parameters:\n"
+              "\nFilename: ", filename, 
+              "\nMotifs: ", args.motifs, 
+              "\nDefault distance: ", distance, 
+              "\nProximity: ", proximity_threshold if proximity_threshold > 0 else "off",
+              "\npLDDT: ", min_plddt,
+              "\n" 
+              )
+    
+    parsed_motifs = parse_motifs_from_string(args.motifs)
+    if not parsed_motifs:
+        print("ERROR: No valid motifs found in --motifs")
+        exit(1)
+    
+    all_motif_hits = []
+    for idx, motif in enumerate(parsed_motifs):
+        motif_dist = motif['distance'] if motif['distance'] is not None else distance
+        residues_list = motif['residues'].split(',')
+        print(f"Searching for motif {idx+1}: '{motif['residues']}' at {motif_dist} Å")
+        hits = find_structural_motifs(filename, residues_list, motif_dist, min_plddt)
+        if not hits:
+            print(f"❌ Motif {idx+1} NOT found. Stopping.")
+            exit(0)
+        all_motif_hits.append(hits)
+    
+    combined_hits = []
+    duplicate_count = 0
+    proximity_discard_count = 0
+    
+    for combo in itertools.product(*all_motif_hits):
+        flat_hit = []
+        for single_hit in combo:
+            for residue_slot in single_hit:
+                flat_hit.extend(residue_slot)
+        
+        seen_seqids = set()
+        has_overlap = False
+        for residue in flat_hit:
+            seqid = residue['seqid']
+            if seqid in seen_seqids:
+                has_overlap = True
+                break
+            seen_seqids.add(seqid)
+        if has_overlap:
+            duplicate_count += 1
+            continue
+        
+        if proximity_threshold > 0:
+            if not check_proximity(flat_hit, proximity_threshold):
+                proximity_discard_count += 1
+                continue
+        
+        combined_hits.append(flat_hit)
+    
+    if duplicate_count > 0:
+        print(f"  ⚠️  Skipped {duplicate_count} combined hit(s) due to residue overlap.")
+    if proximity_discard_count > 0:
+        print(f"  ⚠️  Skipped {proximity_discard_count} combined hit(s) due to proximity ({proximity_threshold} Å).")
+    
+    if combined_hits:
+        print(f"\n✅ Structure contains ALL motifs!")
+        print(f"Found {len(combined_hits)} valid combined hit(s).\n")
+        for idx, hit in enumerate(combined_hits, start=1):
+            print(f"--- Combined Hit {idx} ---")
+            print(json.dumps(hit, sort_keys=False, indent=2))
+            print()
+        
+        result_dict = {
+            'filename': filename,
+            'motifs': args.motifs,
+            'default_distance': distance,
+            'proximity_threshold': proximity_threshold if proximity_threshold > 0 else None,
+            'plddt': min_plddt,
+            'number_of_combined_hits': len(combined_hits),
+            'hits': combined_hits
+        }
+        with open (filename.split('.')[0] + '_multisite.json', 'w' ) as file_out:
+            json.dump (result_dict, file_out, sort_keys=False, indent=4)
+        create_script_file(filename, combined_hits)
+        print(f"JSON output written to {filename.split('.')[0]}_multisite.json")
+        print(f"PyMOL script written to {filename.split('.')[0]}.py")
+    else:
+        print("\n❌ No valid combined hits after filtering.")
+
+###############################################################
+# single‑motif mode (legacy)
+###############################################################
+
+elif args.residues:
+    residue_info_list = args.residues.split(',')
+    print ( fletcher_description )
+    print ( "Running Fletcher with the following parameters:\n"
+              "\nFilename: ", filename, 
+              "\nResidue list: ", residue_info_list, 
+              "\nDistance: ", distance, 
+              "\npLDDT: ", min_plddt,
+              "\n" 
+              )
+    find_structural_motifs(filename, residue_info_list, distance, min_plddt)
+
+else:
+    print("ERROR: Please provide either -r (single motif) or --motifs (multi-motif).")
+    exit(1)
