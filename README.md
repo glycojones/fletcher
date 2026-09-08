@@ -1,6 +1,6 @@
 # Fletcher
 
-While sequence alignments have historically helped infer activity once homology is identified, this is usually limited by the ability of the MSA tool to spot similarities and align them correctly. With the advent of AlphaFold, structural similarities may be found based on sequence similarities that would have flown under the radar if using an MSA exclusively. 'Fletcher' is a tool that will get a list of residues (and alternatives) and look for them in AlphaFold models provided that they lie within a fixed distance, calculated from the last atom of the first residue in a list of candidate residues. 
+While Multiple Sequence Alignments (MSA) may infer function once homology is identified, traditional MSA tools struggle when sequence identity drops, frequently missing similarities in proteins that share as little as 5% sequence identity, yet retain very similar folds and catalytic activity! With the advent of AlphaFold and other really powerful fold prediction software, structural similarities may now be detected directly from predicted 3D models, revealing functional relationships that would fly under the radar of sequence-based methods. Fletcher is a tool that takes a user-defined list of candidate residues (including alternative options) and searches AlphaFold models for spatial matches within a fixed distance threshold, measured from the C-alpha of the primary reference residue.
 
 Usage: 
 
@@ -15,13 +15,16 @@ Latest source code: https://github.com/glycojones/fletcher
 Required arguments:
 
   -f FILENAME, --filename FILENAME
-                        The name of the file to be processed, in PDB or mmCIF
+                        The name of the file to be processed, in mmCIF (preferred) or PDB 
                         format
-  -r RESIDUES, --residues RESIDUES
-                        A list of residues in one-letter code, comma
-                        separated. Alternatives separated by ~, rotamers separated by ':'
-                        e.g. H:3,H:3,W~F~Y:3 – two histidines in rotamer form 3, plus a
-                        tryptophan, phenylalanine (any rotamer) or tyrosine in rotamer 3.
+  -m , --motifs MOTIFS
+                        Multiple motifs separated by '|'. Each motif: anchor,targets:distance.
+                        Use ',' for AND between positions, and '~' for OR between residues.
+                        Can also specify rotamers as integers (check what rotamer you want using an
+                        experimental structure first!)
+                        Example: --motifs "H:3,F:5.0 | H~D:5.0"
+                        Which means a histidine in rotamer 3 and a phenyl alanine within 5 Å,
+                        with another histidine or aspartic acid within 5 Å, separated by DISTANCE.
   -d DISTANCE, --distance DISTANCE
                         Specifies how far each of the residues can be from the
                         last atom (PDB order) in the first specified residue, in Angstroems
