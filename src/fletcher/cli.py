@@ -64,9 +64,14 @@ def cli():
                             help = "A list of residues in one-letter code, comma separated, including alternatives, e.g. H:1,H:2,F:1~W:3:2~Y", \
                             default = "", required = False )                       
 
-    parser.add_argument ( '--motifs', \
+    parser.add_argument ( '-m', '--motifs', \
                             help = "Multiple motifs separated by '|'. Each motif: anchor,targets:distance. "
-                                "Use ',' for AND between positions, and '~' for OR between residues.", \
+                                "Use ',' for AND between positions, and '~' for OR between residues."
+                                "Can also specify rotamers as integers (check what rotamer you want using an"
+                                "experimental structure first!)"
+                                "Example: --motifs \"H:3,F:5.0 | H~D:5.0\""
+                                "Which means a histidine in rotamer 3 and a phenyl alanine within 5 Å,"
+                                "with another histidine or aspartic acid within 5 Å, separated by DISTANCE.", \
                             required = False )                       
 
     parser.add_argument ( '-d', '--distance', \
