@@ -15,8 +15,9 @@ classifiers = [
 ]
 authors = [
     { name = "Jon Agirre", email = "jon.agirre@york.ac.uk" },
-    { name = "Federico Sabbadin", email = "federico.sabbadin@york.ac.uk" },
-    { name = "Rebecca Taylor", email = "rlt555@york.ac.uk" }
+    { name = "Federico Sabbadin" },
+    { name = "Tom Robinson" },
+    { name = "Rebecca Taylor" }
 ]
 maintainers = [
     { name = "Jon Agirre", email = "jon.agirre@york.ac.uk" },
