@@ -2,7 +2,7 @@ import json
 import argparse
 import itertools
 import numpy as np
-from .fletcher import find_structural_motifs, create_script_file
+from .fletcher_maximus import find_structural_motifs, create_script_file
 
 ###############################################################
 # helper functions for multi‑motif parsing and filtering
