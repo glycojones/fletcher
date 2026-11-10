@@ -202,8 +202,9 @@ def create_script_file ( filename = "", list_of_hits = [ ] ) :
             else:
                 flat_residues = hit
             for residue_info in flat_residues:
-                file_out.write ( '["%s %s", %.3f, %.3f, %.3f, ]' \
-                                            % ( residue_info['name'], \
+                file_out.write ( '["%s %s %s", %.3f, %.3f, %.3f, ]' \
+                                            % ( residue_info['chain'], \
+                                                residue_info['name'], \
                                                 residue_info['seqid'], \
                                                 residue_info['coordinates'][0], \
                                                 residue_info['coordinates'][1], \
@@ -239,6 +240,7 @@ def find_structural_motifs ( filename = "",
         for chain in first_residues.chains(model):
             for residue in first_residues.residues(chain):
                 first_residue_info = {
+                    'chain': str(chain.name),
                     'name': residue.name,
                     'seqid': str(residue.seqid),
                     'rotamer': str(get_classification(residue.name, calculate_chis(residue))),
@@ -264,6 +266,7 @@ def find_structural_motifs ( filename = "",
                         cra = mark.to_cra(af_model[0])
 
                         candidate = {
+                            'chain': str(cra.chain.name),
                             'name': cra.residue.name,
                             'seqid': str(cra.residue.seqid.num),  
                             'rotamer': str(get_classification(cra.residue.name, calculate_chis(cra.residue))),
