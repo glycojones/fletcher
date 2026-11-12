@@ -25,7 +25,7 @@ Multi-motif mode (recommended) required arguments:
                         Each motif: anchor,targets:distance.
                         Example: --motifs "H:3,A,F:3:6.0 | H~D"
                         Which means a histidine in rotamer 3, an alanine and a phenylalanine in
-                        rotamer 3 with all residues' last atom within 6 Å, with another
+                        rotamer 3 with all residues' last atom (PDB order) within 6 Å, with another
                         histidine or aspartic acid, separated by PROXIMITY.
   --proximity PROXIMITY
                         Maximum allowed distance (Å) between the last atom (PDB order) of any two residues                            from different motifs.
