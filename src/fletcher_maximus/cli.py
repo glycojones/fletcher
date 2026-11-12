@@ -48,7 +48,7 @@ def cli():
     
     fletcher_description = '\nFletcher will try to find a list of residues within a fixed distance from the last atom in the first residue.'\
                                 '\nConcept: Federico Sabbadin & Jon Agirre, University of York, UK.'\
-                                '\nCode: Tom Robinson, Rebecca Taylor & Jon Agirre, University of York, UK.'\
+                                '\nCode: Tom Robinson, Rebecca Taylor, Sophie Birrell & Jon Agirre, University of York, UK.'\
                                 '\n\nLatest source code: https://github.com/glycojones/fletcher\n'
     
     parser = argparse.ArgumentParser ( 
@@ -61,21 +61,26 @@ def cli():
                             required = True )                  
 
     parser.add_argument ( '-r', '--residues', \
-                            help = "A list of residues in one-letter code, comma separated, including alternatives, e.g. H:1,H:2,F:1~W:3:2~Y", \
+                            help = "A list of residues in one-letter code, comma separated, including alternatives, e.g. H:1,H:2,F:1~W:3:2", \
                             default = "", required = False )                       
 
     parser.add_argument ( '-m', '--motifs', \
-                            help = "Multiple motifs separated by '|'. Each motif: anchor,targets:distance. "
-                                "Use ',' for AND between positions, and '~' for OR between residues."
+                            help = "Multiple motifs separated by '|'. Each motif contains a list of residues in"
+                                "one-letter code. Use ',' for AND between positions, and '~' for OR between"
+                                "residues."
                                 "Can also specify rotamers as integers (check what rotamer you want using an"
-                                "experimental structure first!)"
-                                "Example: --motifs \"H:3,F:5.0 | H~D:5.0\""
-                                "Which means a histidine in rotamer 3 and a phenyl alanine within 5 Å,"
-                                "with another histidine or aspartic acid within 5 Å, separated by DISTANCE.", \
+                                "experimental structure first!)."
+                                "Each motif: anchor,targets:distance."
+                                "Example: --motifs \"H:3,A,F:3:6.0 | H~D""
+                                "Which means a histidine in rotamer 3, an alanine and a phenylalanine in"
+                                "in rotamer 3 with all residues' last atom (PDB order) within 6 Å,"
+                                "with another histidine or aspartic acid, separated by PROXIMITY.", \
                             required = False )                       
 
     parser.add_argument ( '-d', '--distance', \
-                            help = "Default distance if not specified per motif in --motifs (Angstroms).", \
+                            help = "Default distance if not specified per motif in --motifs (Angstroms)."
+                                "Specifies how far the last atom (PDB order) in each of the residues can be"
+                                "from the last atom in the first specified residue, in Angstroms.", \
                             default = "5.0", required = False )  
 
     parser.add_argument ( '--proximity', \
