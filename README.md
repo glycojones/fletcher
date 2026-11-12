@@ -5,32 +5,47 @@ While Multiple Sequence Alignments (MSA) may infer function once homology is ide
 Usage: 
 
 ```
-fletcher.py [-h] -f FILENAME -r RESIDUES -d DISTANCE
+fletcher_maximus.py [-h] -f FILENAME -r RESIDUES -d DISTANCE
 
 Fletcher will try to find a list of residues within a fixed distance from the last atom in the first residue.
-Concept: Federico Sabbadin & Jon Agirre, University of York, UK.
-Code: Jon Agirre, with contributions from Rebecca Taylor, University of York, UK.
+Concept: Federico Sabbadin & Jon Agirre, University of York, UK. 
+Code: Tom Robinson, Rebecca Taylor, Sophie Birrell & Jon Agirre, University of York, UK. 
 Latest source code: https://github.com/glycojones/fletcher
 
-Required arguments:
+Multi-motif mode (recommended) required arguments:
 
   -f FILENAME, --filename FILENAME
                         The name of the file to be processed, in mmCIF (preferred) or PDB 
-                        format
+                        format.
   -m , --motifs MOTIFS
-                        Multiple motifs separated by '|'. Each motif: anchor,targets:distance.
-                        Use ',' for AND between positions, and '~' for OR between residues.
+                        Multiple motifs separated by '|'. Each motif contains a list of residues in
+                        one-letter code. Use ',' for AND between residues, and '~' for OR between residues.
                         Can also specify rotamers as integers (check what rotamer you want using an
-                        experimental structure first!)
-                        Example: --motifs "H:3,F:5.0 | H~D:5.0"
-                        Which means a histidine in rotamer 3 and a phenyl alanine within 5 Å,
-                        with another histidine or aspartic acid within 5 Å, separated by DISTANCE.
-  -d DISTANCE, --distance DISTANCE
-                        Specifies how far each of the residues can be from the
-                        last atom (PDB order) in the first specified residue, in Angstroems
+                        experimental structure first!).
+                        Each motif: anchor,targets:distance.
+                        Example: --motifs "H:3,A,F:3:6.0 | H~D"
+                        Which means a histidine in rotamer 3, an alanine and a phenylalanine in
+                        rotamer 3 with all residues' last atom within 6 Å, with another
+                        histidine or aspartic acid, separated by PROXIMITY.
+  --proximity PROXIMITY
+                        Maximum allowed distance (Å) between the last atom (PDB order) of any two residues                            from different motifs.
   -p PLDDT, --plddt PLDDT
                         Flag up candidate residues with average pLDDT below
-                        thresold (Jumper et al., 2020).
+                        threshold (Jumper et al., 2020).
+
+Single-motif mode required arguments:
+
+  -f FILENAME, --filename FILENAME
+                        The name of the file to be processed, in mmCIF (preferred) or PDB format.
+  -r RESIDUES, --residues RESIDUES
+                        A list of residues in one-letter code, comma separated, including
+                        alternatives, e.g. H:1,H:2,F:1~W:3:2.
+  -d DISTANCE, --distance DISTANCE
+                        Specifies how far the last atom (PDB order) in each of the residues can be
+                        from the last atom in the first specified residue, in Angstroms.
+  -p PLDDT, --plddt PLDDT
+                        Flag up candidate residues with average pLDDT below
+                        threshold (Jumper et al., 2020).
 
 Optional arguments:
 
