@@ -7,7 +7,8 @@ Usage:
 ```
 fletcher_maximus.py [-h] -f FILENAME -r RESIDUES -d DISTANCE
 
-Fletcher will try to find a list of residues within a fixed distance from the last atom in the first residue.
+Fletcher will try to find a list of residues within a fixed distance from the last atom in the first
+residue.
 Concept: Federico Sabbadin & Jon Agirre, University of York, UK. 
 Code: Tom Robinson, Rebecca Taylor, Sophie Birrell & Jon Agirre, University of York, UK. 
 Latest source code: https://github.com/glycojones/fletcher
@@ -19,7 +20,8 @@ Multi-motif mode (recommended) required arguments:
                         format.
   -m , --motifs MOTIFS
                         Multiple motifs separated by '|'. Each motif contains a list of residues in
-                        one-letter code. Use ',' for AND between residues, and '~' for OR between residues.
+                        one-letter code. Use ',' for AND between residues, and '~' for OR between
+                        residues.
                         Can also specify rotamers as integers (check what rotamer you want using an
                         experimental structure first!).
                         Each motif: anchor,targets:distance.
@@ -28,7 +30,8 @@ Multi-motif mode (recommended) required arguments:
                         rotamer 3 with all residues' last atom (PDB order) within 6 Å, with another
                         histidine or aspartic acid, separated by PROXIMITY.
   --proximity PROXIMITY
-                        Maximum allowed distance (Å) between the last atom (PDB order) of any two residues                            from different motifs.
+                        Maximum allowed distance (Å) between the last atom (PDB order) of any two
+                        residues from different motifs.
   -p PLDDT, --plddt PLDDT
                         Flag up candidate residues with average pLDDT below
                         threshold (Jumper et al., 2020).

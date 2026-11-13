@@ -17,7 +17,8 @@ authors = [
     { name = "Jon Agirre", email = "jon.agirre@york.ac.uk" },
     { name = "Federico Sabbadin" },
     { name = "Tom Robinson" },
-    { name = "Rebecca Taylor" }
+    { name = "Rebecca Taylor" },
+    { name = "Sophie Birrell" },
 ]
 maintainers = [
     { name = "Jon Agirre", email = "jon.agirre@york.ac.uk" },
